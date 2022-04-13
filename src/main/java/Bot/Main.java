@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
 import javax.security.auth.login.LoginException;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -51,63 +52,77 @@ public class Main {
     public static int getMoney(String userID) {
         try {
             return Integer.parseInt(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(0));
+        } catch (FileNotFoundException e) {
+            System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
-            return 0;
         }
+        return 0;
     }
 
     public static LocalDate getDailyClaimed(String userID) {
         try {
             return LocalDate.parse(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(1));
+        } catch (FileNotFoundException e) {
+            System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
-            return LocalDate.now();
         }
+        return LocalDate.now();
     }
 
     public static int getDailiesClaimed(String userID) {
         try {
             return Integer.parseInt(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(2));
+        } catch (FileNotFoundException e) {
+            System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
-            return 0;
         }
+        return 0;
     }
 
     public static List<String> getMembersInvited(String userID) {
         try {
             return List.of(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(3).split(","));
+        } catch (FileNotFoundException e) {
+            System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
-            return null;
         }
+        return null;
     }
 
     public static String getInvitedByMember(String userID) {
         try {
             return Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(4);
+        } catch (FileNotFoundException e) {
+            System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
-            return null;
         }
+        return null;
     }
 
     public static LocalDate getGameClaimed(String userID) {
         try {
             return LocalDate.parse(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(5));
+        } catch (FileNotFoundException e) {
+            System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
-            return LocalDate.now();
         }
+        return LocalDate.now();
     }
 
     public static List<String> getGameKeys(String userID) {
         try {
             return List.of(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(6).split(","));
+        } catch (FileNotFoundException e) {
+            System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
-            return null;
         }
+        return null;
     }
 }
