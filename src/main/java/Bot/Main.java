@@ -14,20 +14,6 @@ import java.util.List;
 
 public class Main {
 
-    public enum Var {
-        money(0),
-        dailyClaimed(1),
-        dailiesClaimed(2),
-        membersInvited(3),
-        invitedByMember(4),
-        gameClaimed(5),
-        gameKeys(6);
-
-        public final int index;
-        Var(int index) { this.index = index; }
-
-    }
-
     public static void main(String[] args) {
 
         JDABuilder builder = JDABuilder.create(
@@ -58,15 +44,6 @@ public class Main {
         } catch (IOException e) {
             System.out.println("Could not find the bot.token file!");
             System.exit(1);
-            return "";
-        }
-    }
-
-    public static String readLine(String userID, Var var) {
-        try {
-            return Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(var.index);
-        } catch (IOException e) {
-            e.printStackTrace();
             return "";
         }
     }
