@@ -9,6 +9,7 @@ import javax.security.auth.login.LoginException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.List;
@@ -42,17 +43,19 @@ public class Main {
     private static String getToken() {
         try {
             return Files.readAllLines(Paths.get("bot.token")).get(0);
-        } catch (IOException e) {
+        } catch (NoSuchFileException e) {
             System.out.println("Could not find the bot.token file!");
-            System.exit(1);
-            return "";
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        System.exit(1);
+        return "";
     }
 
     public static int getMoney(String userID) {
         try {
             return Integer.parseInt(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(0));
-        } catch (FileNotFoundException e) {
+        } catch (NoSuchFileException e) {
             System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
@@ -63,7 +66,7 @@ public class Main {
     public static LocalDate getDailyClaimed(String userID) {
         try {
             return LocalDate.parse(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(1));
-        } catch (FileNotFoundException e) {
+        } catch (NoSuchFileException e) {
             System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
@@ -74,7 +77,7 @@ public class Main {
     public static int getDailiesClaimed(String userID) {
         try {
             return Integer.parseInt(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(2));
-        } catch (FileNotFoundException e) {
+        } catch (NoSuchFileException e) {
             System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
@@ -85,7 +88,7 @@ public class Main {
     public static List<String> getMembersInvited(String userID) {
         try {
             return List.of(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(3).split(","));
-        } catch (FileNotFoundException e) {
+        } catch (NoSuchFileException e) {
             System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
@@ -96,7 +99,7 @@ public class Main {
     public static String getInvitedByMember(String userID) {
         try {
             return Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(4);
-        } catch (FileNotFoundException e) {
+        } catch (NoSuchFileException e) {
             System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
@@ -107,7 +110,7 @@ public class Main {
     public static LocalDate getGameClaimed(String userID) {
         try {
             return LocalDate.parse(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(5));
-        } catch (FileNotFoundException e) {
+        } catch (NoSuchFileException e) {
             System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
@@ -118,7 +121,7 @@ public class Main {
     public static List<String> getGameKeys(String userID) {
         try {
             return List.of(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(6).split(","));
-        } catch (FileNotFoundException e) {
+        } catch (NoSuchFileException e) {
             System.out.println(userID + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
