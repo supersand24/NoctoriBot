@@ -3,7 +3,6 @@ package Bot;
 import net.dv8tion.jda.api.entities.Member;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -32,6 +31,37 @@ public class Var {
             Path filePath = Paths.get("variables/" + userID + ".var");
             List<String> content = Files.readAllLines(filePath);
             content.set(0, String.valueOf(money));
+            Files.write(filePath, content, StandardCharsets.UTF_8);
+        } catch (NoSuchFileException e) {
+            System.out.println(userID + ".var file not found!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void addMoney(String userID, int money) {
+        try {
+            Path filePath = Paths.get("variables/" + userID + ".var");
+            List<String> content = Files.readAllLines(filePath);
+            content.set(0, String.valueOf(
+                    Integer.parseInt(content.get(0)) + money
+            ));
+            Files.write(filePath, content, StandardCharsets.UTF_8);
+        } catch (NoSuchFileException e) {
+            System.out.println(userID + ".var file not found!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void removeMoney(String userID, int money) {
+        try {
+            Path filePath = Paths.get("variables/" + userID + ".var");
+            List<String> content = Files.readAllLines(filePath);
+            int wallet = Integer.parseInt(content.get(0));
+            if (wallet > money) {
+                content.set(0, String.valueOf(wallet - money));
+            }
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
             System.out.println(userID + ".var file not found!");
