@@ -1,6 +1,7 @@
 package Bot;
 
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -15,48 +16,48 @@ import java.util.List;
 
 public class Var {
 
-    public static int getMoney(String userID) {
+    public static int getMoney(User user) {
         try {
-            return Integer.parseInt(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(0));
+            return Integer.parseInt(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(0));
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
         return 0;
     }
 
-    public static void setMoney(String userID, int money) {
+    public static void setMoney(User user, int money) {
         try {
-            Path filePath = Paths.get("variables/" + userID + ".var");
+            Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
             content.set(0, String.valueOf(money));
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static void addMoney(String userID, int money) {
+    public static void addMoney(User user, int money) {
         try {
-            Path filePath = Paths.get("variables/" + userID + ".var");
+            Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
             content.set(0, String.valueOf(
                     Integer.parseInt(content.get(0)) + money
             ));
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static void removeMoney(String userID, int money) {
+    public static void removeMoney(User user, int money) {
         try {
-            Path filePath = Paths.get("variables/" + userID + ".var");
+            Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
             int wallet = Integer.parseInt(content.get(0));
             if (wallet > money) {
@@ -64,123 +65,123 @@ public class Var {
             }
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static LocalDate getDailyClaimed(String userID) {
+    public static LocalDate getDailyClaimed(User user) {
         try {
-            return LocalDate.parse(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(1));
+            return LocalDate.parse(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(1));
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
         return LocalDate.now();
     }
 
-    public static int getDailiesClaimed(String userID) {
+    public static int getDailiesClaimed(User user) {
         try {
-            return Integer.parseInt(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(2));
+            return Integer.parseInt(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(2));
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
         return 0;
     }
 
-    public static void updateDailyClaimed(String userID) {
+    public static void updateDailyClaimed(User user) {
         try {
-            Path filePath = Paths.get("variables/" + userID + ".var");
+            Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
             content.set(1, LocalDate.now().toString());
             content.set(2, String.valueOf(Integer.parseInt(content.get(2)) + 1));
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static List<String> getMembersInvited(String userID) {
+    public static List<String> getMembersInvited(User user) {
         try {
-            return List.of(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(3).split(","));
+            return List.of(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(3).split(","));
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public static void addMemberInvited(String userID, Member member) {
+    public static void addMemberInvited(User user, Member member) {
         try {
-            Path filePath = Paths.get("variables/" + userID + ".var");
+            Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
             List<String> members = parseStringArray(content.get(3));
             members.add(member.getId());
             content.set(3, members.toString() );
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static String getInvitedByMember(String userID) {
+    public static String getInvitedByMember(User user) {
         try {
-            return Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(4);
+            return Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(4);
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public static void setInvitedByMember(String userID, Member member) {
+    public static void setInvitedByMember(User user, Member member) {
         try {
-            Path filePath = Paths.get("variables/" + userID + ".var");
+            Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
             content.set(4, member.getId());
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static LocalDate getGameClaimed(String userID) {
+    public static LocalDate getGameClaimed(User user) {
         try {
-            return LocalDate.parse(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(5));
+            return LocalDate.parse(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(5));
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
         return LocalDate.now();
     }
 
-    public static List<String> getGameKeys(String userID) {
+    public static List<String> getGameKeys(User user) {
         try {
-            return List.of(Files.readAllLines(Paths.get("variables/" + userID + ".var")).get(6).split(","));
+            return List.of(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(6).split(","));
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public static void addGameKey(String userID, String game) {
+    public static void addGameKey(User user, String game) {
         try {
-            Path filePath = Paths.get("variables/" + userID + ".var");
+            Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
             List<String> gameKeys = parseStringArray(content.get(6));
             gameKeys.add(game);
@@ -188,7 +189,7 @@ public class Var {
             content.set(6, gameKeys.toString() );
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
-            System.out.println(userID + ".var file not found!");
+            System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {
             e.printStackTrace();
         }
