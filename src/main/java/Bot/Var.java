@@ -109,7 +109,7 @@ public class Var {
 
     public static List<String> getMembersInvited(User user) {
         try {
-            return List.of(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(3).split(","));
+            return parseStringArray(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(3));
         } catch (NoSuchFileException e) {
             System.out.println(user.getId() + ".var file not found!");
         } catch (IOException e) {

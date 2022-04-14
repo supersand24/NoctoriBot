@@ -9,9 +9,9 @@ public class Bank {
     public static void daily(User user) {
         if (!user.isBot()) {
 
-            if ( LocalDate.now().compareTo(Var.getDailyClaimed(user.getId())) > 0) {
+            if ( LocalDate.now().compareTo(Var.getDailyClaimed(user)) > 0) {
                 System.out.println("Claiming daily for " + user.getName());
-                Var.updateDailyClaimed(user.getId());
+                Var.updateDailyClaimed(user);
             }
 
         }
