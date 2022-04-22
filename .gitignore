@@ -25,3 +25,6 @@ hs_err_pid*
 bot.token
 *.var
 *.bak
+leaderboards/*
+src/main/resources/logback.xml
+target/classes/logback.xml
