@@ -14,7 +14,34 @@ public class Manager {
     private final static Logger log = LoggerFactory.getLogger(Manager.class);
 
     public enum Map {
-        NACHT_DER_UNTOTEN("nachtDerUntoten",false);
+        NACHT_DER_UNTOTEN("nachtDerUntoten",false),
+        VERRUCKT("verruckt",false),
+        SHI_NO_NUMA("shiNoNuma",false),
+        THE_GIANT("theGiant",false),
+        DER_RIESE_DECLASSIFIED("derRieseDeclassified",true),
+        KINO_DER_TOTEN("kinoDerToten",false),
+        ASCENSION("ascension",false),
+        SHANGRI_LA("shangriLa",false),
+        MOON("moon",false),
+        TOWN_REIMAGINED("townReimagined",true),
+        FARM("farm",true),
+        DAYBREAK("daybreak",true),
+        DIE_RISE_SLIQUIFIER_FLOOR("dieRiseSliquifierFloor",true),
+        DIE_RISE_ROOF("dieRiseRoof",true),
+        BURIED_CHALLENGE("buriedChallenge",true),
+        ORIGINS("origins",false),
+        SHADOWS_OF_EVIL("shadowsOfEvil",false),
+        DER_EISENDRACHE("derEisendrache",false),
+        ZETSUBOU_NO_SHIMA("zetsubouNoShima",false),
+        GOROD_KROVI("gorodKrovi",false),
+        REVELATIONS("revelations",false),
+        NACHT_DER_AGONIE("nachtDerAgonie",true),
+        KOWLOON("kowloon",true),
+        LEVIATHAN("leviathan",true),
+        KYASSURU("kyassuru",true),
+        GRIT("grit",true),
+        COVE("cove",true),
+        BLOCKADE("blockade",true);
 
         private final String fileName;
         private final boolean moddedMap;
@@ -25,7 +52,7 @@ public class Manager {
         }
 
         public String getFileName() {
-            return fileName + ".txt";
+            return fileName + ".records";
         }
 
         public boolean getModdedMap() {
