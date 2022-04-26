@@ -17,6 +17,7 @@ public class Listener extends ListenerAdapter {
 
     private final Logger log = LoggerFactory.getLogger(Listener.class);
     private final long GUILD_ID = 444523714420408322L;
+    private final String COMMAND_SIGN = "n!";
 
     @Override
     public void onReady(@NotNull ReadyEvent e) {
@@ -30,7 +31,13 @@ public class Listener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
-        log.info("Message Received");
+        if (!e.getAuthor().isBot()) {
+            String command = e.getMessage().getContentRaw();
+            if (command.startsWith(COMMAND_SIGN)) {
+                command = e.getMessage().getContentRaw().substring(COMMAND_SIGN.length());
+                log.info(command + " Received!");
+            }
+        }
     }
 
     @Override
