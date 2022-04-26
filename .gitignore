@@ -26,5 +26,6 @@ bot.token
 *.var
 *.bak
 .idea/runConfigurations.xml
+leaderboards/*
 src/main/resources/logback.xml
 target/classes/logback.xml
