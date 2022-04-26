@@ -1,5 +1,8 @@
 package Game.BlackOps3;
 
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+
 import java.util.Arrays;
 
 public class Record {
@@ -23,6 +26,26 @@ public class Record {
         this.mod = mod;
         this.round = endRound;
         this.players = players;
+    }
+
+    public MessageEmbed getAsEmbed() {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle(map.toString());
+        embed.setDescription(
+                "Survived to Round " + round + "\n" + mod
+        );
+        for (Player player : players) {
+            embed.addField(
+                    String.valueOf(player.getMemberId()),
+                            player.getScore() + " Score\n" +
+                            player.getKills() + " Kills\n" +
+                            player.getHeadshots() + " Headshots\n" +
+                            player.getDowns() + " Downs\n" +
+                            player.getRevives() + " Revives",
+                    true
+            );
+        }
+        return embed.build();
     }
 
     @Override

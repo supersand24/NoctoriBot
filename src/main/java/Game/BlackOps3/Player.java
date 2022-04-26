@@ -22,6 +22,34 @@ public class Player {
         this.headshots  =   Integer.parseInt(   rawSplit[5]         );
     }
 
+    public Member getMember() {
+        return member;
+    }
+
+    public long getMemberId() {
+        return memberId;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public int getKills() {
+        return kills;
+    }
+
+    public int getHeadshots() {
+        return headshots;
+    }
+
+    public int getDowns() {
+        return downs;
+    }
+
+    public int getRevives() {
+        return revives;
+    }
+
     @Override
     public String toString() {
         return "Player{" +
