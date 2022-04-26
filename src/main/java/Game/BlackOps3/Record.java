@@ -18,6 +18,13 @@ public class Record {
         this.players = players;
     }
 
+    public Record(Manager.Map map, Manager.Mod mod, int startRound, int endRound, Player[] players) {
+        this.map = map;
+        this.mod = mod;
+        this.round = endRound;
+        this.players = players;
+    }
+
     @Override
     public String toString() {
         return "Record{" +

@@ -7,11 +7,13 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Manager {
 
     private final static Logger log = LoggerFactory.getLogger(Manager.class);
+    private final static HashMap<Record, Map> leaderboards = new HashMap<>();
 
     public enum Map {
         NACHT_DER_UNTOTEN("nachtDerUntoten",false),
@@ -81,30 +83,44 @@ public class Manager {
     public static void parseData(Map map) {
         try {
             List<String> rawRecords = Files.readAllLines(Paths.get("leaderboards/blackOps3/" + map.getFileName()));
-            List<Record> records = new ArrayList<>();
 
             for (String rawRecord : rawRecords) {
+                System.out.println(rawRecord);
                 Mod mod = getModFromRaw(rawRecord);
                 rawRecord = rawRecord.substring(2);
                 Player[] players;
+
+                String[] splitRecord = rawRecord.split(";");
+                players = new Player[splitRecord.length - 1];
+                for (int i = 1; i < splitRecord.length; i++) {
+                    players[i - 1] = new Player(splitRecord[i]);
+                }
+
                 switch (mod) {
                     case VANILLA,ALL_AROUND_ENHANCEMENT -> {
-                        String[] splitRecord = rawRecord.split(";");
-                        players = new Player[splitRecord.length - 1];
-                        for (int i = 1; i < splitRecord.length; i++) {
-                            players[i - 1] = new Player(splitRecord[i]);
-                        }
-                        records.add(
+                        leaderboards.put(
                                 new Record(map, mod,
                                         Integer.parseInt(splitRecord[0]),
                                         players
-                                )
+                                ),
+                                map
+                        );
+                    }
+                    case ZE_LITE, ZE_COMPLETE -> {
+                        String[] roundSet = splitRecord[0].split("-");
+                        leaderboards.put(
+                                new Record(map, mod,
+                                        Integer.parseInt(roundSet[0]),
+                                        Integer.parseInt(roundSet[1]),
+                                        players
+                                ),
+                                map
                         );
                     }
                 }
             }
 
-            System.out.println(records);
+            System.out.println(leaderboards);
 
         } catch (NoSuchFileException e) {
             log.error("Could not find the " + map.getFileName() + " file!");
