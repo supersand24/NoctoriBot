@@ -2,6 +2,7 @@ package Bot;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
@@ -16,6 +17,7 @@ import java.nio.file.Paths;
 public class Main {
 
     private final static Logger log = LoggerFactory.getLogger(Main.class);
+    private static JDA jda;
 
     public static void main(String[] args) {
 
@@ -30,8 +32,6 @@ public class Main {
                 GatewayIntent.DIRECT_MESSAGE_REACTIONS
         ).setMemberCachePolicy(MemberCachePolicy.ALL)
                 .disableCache(CacheFlag.EMOTE);
-
-        JDA jda;
 
         builder.addEventListeners( new Listener() );
 
@@ -53,6 +53,10 @@ public class Main {
         }
         System.exit(1);
         return "";
+    }
+
+    public static Guild getNoctori() {
+        return jda.getGuilds().get(0);
     }
 
 }

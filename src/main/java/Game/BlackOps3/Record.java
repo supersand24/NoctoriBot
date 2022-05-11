@@ -48,6 +48,14 @@ public class Record {
         return embed.build();
     }
 
+    public String getPlayerNames() {
+        StringBuilder str = new StringBuilder();
+        for (Player player : players) {
+            str.append(player.getMember().getEffectiveName()).append("\n");
+        }
+        return str.toString();
+    }
+
     @Override
     public String toString() {
         return "Record{" +
