@@ -32,17 +32,15 @@ public class Record {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor("Black Ops 3 Zombies");
         embed.setTitle(map.getMapName());
-        embed.setDescription(
-                "Survived to Round " + round + "\n" + mod.getName()
-        );
+        if (mod == Manager.Mod.VANILLA) {
+            embed.setDescription("Survived to Round " + round);
+        } else {
+            embed.setDescription("Survived to Round " + round + "\n" + mod.getName());
+        }
         for (Player player : players) {
             embed.addField(
                     player.getMember().getEffectiveName(),
-                    player.getScore() + " Score\n" +
-                    player.getKills() + " Kills\n" +
-                    player.getHeadshots() + " Headshots\n" +
-                    player.getDowns() + " Downs\n" +
-                    player.getRevives() + " Revives",
+                    player.toString(),
                     true
             );
         }

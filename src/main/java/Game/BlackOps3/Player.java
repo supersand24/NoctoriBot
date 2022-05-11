@@ -56,14 +56,16 @@ public class Player {
 
     @Override
     public String toString() {
-        return "Player{" +
-                "member=" + member +
-                ", memberId=" + memberId +
-                ", score=" + score +
-                ", kills=" + kills +
-                ", headshots=" + headshots +
-                ", downs=" + downs +
-                ", revives=" + revives +
-                '}';
+        StringBuilder string = new StringBuilder();
+        string.append(score).append(" Score\n");
+        string.append(kills).append(" Kill");
+        if (kills != 1) string.append("s"); string.append("\n");
+        string.append(headshots).append(" Headshot");
+        if (headshots != 1) string.append("s"); string.append("\n");
+        string.append(downs).append(" Down");
+        if (downs != 1) string.append("s"); string.append("\n");
+        string.append(getRevives()).append(" Revive");
+        if (revives != 1) string.append("s"); string.append("\n");
+        return string.toString();
     }
 }
