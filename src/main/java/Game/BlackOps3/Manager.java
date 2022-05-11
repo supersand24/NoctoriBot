@@ -67,19 +67,25 @@ public class Manager {
     }
 
     public enum Mod {
-        VANILLA(0),
-        ZE_LITE(1),
-        ZE_COMPLETE(2),
-        ALL_AROUND_ENHANCEMENT(3);
+        VANILLA(0, "Vanilla"),
+        ZE_LITE(1, "Zombies Experience: Complete Edition"),
+        ZE_COMPLETE(2, "Zombies Experience: Lite Edition"),
+        ALL_AROUND_ENHANCEMENT(3, "All-around Enhancement");
 
         private final int index;
+        private final String name;
 
-        Mod(int index) {
+        Mod(int index, String name) {
             this.index = index;
+            this.name = name;
         }
 
         public int getIndex() {
             return index;
+        }
+
+        public String getName() {
+            return name;
         }
     }
 

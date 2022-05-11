@@ -30,18 +30,19 @@ public class Record {
 
     public MessageEmbed getAsEmbed() {
         EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle(map.toString());
+        embed.setAuthor("Black Ops 3 Zombies");
+        embed.setTitle(map.getMapName());
         embed.setDescription(
-                "Survived to Round " + round + "\n" + mod
+                "Survived to Round " + round + "\n" + mod.getName()
         );
         for (Player player : players) {
             embed.addField(
-                    String.valueOf(player.getMemberId()),
-                            player.getScore() + " Score\n" +
-                            player.getKills() + " Kills\n" +
-                            player.getHeadshots() + " Headshots\n" +
-                            player.getDowns() + " Downs\n" +
-                            player.getRevives() + " Revives",
+                    player.getMember().getEffectiveName(),
+                    player.getScore() + " Score\n" +
+                    player.getKills() + " Kills\n" +
+                    player.getHeadshots() + " Headshots\n" +
+                    player.getDowns() + " Downs\n" +
+                    player.getRevives() + " Revives",
                     true
             );
         }
