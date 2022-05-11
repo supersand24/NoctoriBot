@@ -32,6 +32,7 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
         if (!e.getAuthor().isBot()) {
+            Bank.daily(e.getAuthor());
             String command = e.getMessage().getContentRaw();
             if (command.startsWith(COMMAND_SIGN)) {
                 command = e.getMessage().getContentRaw().substring(COMMAND_SIGN.length());
@@ -45,7 +46,7 @@ public class Listener extends ListenerAdapter {
         AudioChannel audioChannel = e.getChannelJoined();
         Member member = e.getMember();
         log.info(member.getEffectiveName() + " joined " + audioChannel.getName() + ".");
-        AutoVoiceManager.join(member, audioChannel);
+        Bank.daily(e.getMember().getUser());
     }
 
     @Override
