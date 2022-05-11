@@ -6,7 +6,7 @@
         </encoder>
     </appender>
 
-    <root level="debug"> <!-- "info" or "debug" -->
+    <root level="info"> <!-- "info" or "debug" -->
         <appender-ref ref="STDOUT" />
     </root>
 </configuration>
