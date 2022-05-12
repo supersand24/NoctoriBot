@@ -31,8 +31,15 @@ public class Leaderboard {
     public MessageEmbed getAsEmbed() {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle(getMap().getMapName());
+        embed.setAuthor("Black Ops 3 Zombies");
+        embed.setDescription("Leaderboard of Rounds Survived");
         for (Record record : records) {
-            embed.addField("Round " + record.round, record.getPlayerNames(), true);
+            int rounds = (record.endRound - record.startRound);
+            if (rounds == 1) {
+                embed.addField(rounds + " Round", record.getPlayerNames(), true);
+            } else {
+                embed.addField(rounds + " Rounds", record.getPlayerNames(), true);
+            }
         }
         return embed.build();
     }

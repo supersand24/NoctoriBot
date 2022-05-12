@@ -9,7 +9,8 @@ public class Record {
 
     Manager.Map map;
     Manager.Mod mod;
-    int round;
+    int startRound = 1;
+    int endRound;
     Player[] players;
 
     boolean easterEgg = false;
@@ -17,14 +18,15 @@ public class Record {
     public Record(Manager.Map map, Manager.Mod mod, int round, Player[] players) {
         this.map = map;
         this.mod = mod;
-        this.round = round;
+        this.endRound = round;
         this.players = players;
     }
 
     public Record(Manager.Map map, Manager.Mod mod, int startRound, int endRound, Player[] players) {
         this.map = map;
         this.mod = mod;
-        this.round = endRound;
+        this.startRound = startRound;
+        this.endRound = endRound;
         this.players = players;
     }
 
@@ -32,11 +34,16 @@ public class Record {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor("Black Ops 3 Zombies");
         embed.setTitle(map.getMapName());
-        if (mod == Manager.Mod.VANILLA) {
-            embed.setDescription("Survived to Round " + round);
-        } else {
-            embed.setDescription("Survived to Round " + round + "\n" + mod.getName());
+        StringBuilder desc = new StringBuilder();
+        desc.append("Survived");
+        if (startRound != 1) {
+            desc.append(" from Round ").append(startRound);
         }
+        desc.append(" to Round ").append(endRound);
+        if (mod != Manager.Mod.VANILLA) {
+            desc.append("\nUsing ").append(mod.getName()).append(" Mod");
+        }
+        embed.setDescription(desc);
         for (Player player : players) {
             embed.addField(
                     player.getMember().getEffectiveName(),
@@ -59,7 +66,7 @@ public class Record {
     public String toString() {
         return "Record{" +
                 "map='" + map + '\'' +
-                ", round=" + round +
+                ", round=" + endRound +
                 ", players=" + Arrays.toString(players) +
                 ", easterEgg=" + easterEgg +
                 '}';
