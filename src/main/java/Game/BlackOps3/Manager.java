@@ -115,13 +115,22 @@ public class Manager {
                     }
                     case ZE_LITE, ZE_COMPLETE -> {
                         String[] roundSet = splitRecord[0].split("-");
-                        leaderboard.addRecord(
-                                new Record(map, mod,
-                                        Integer.parseInt(roundSet[0]),
-                                        Integer.parseInt(roundSet[1]),
-                                        players
-                                )
-                        );
+                        if (roundSet.length > 1) {
+                            leaderboard.addRecord(
+                                    new Record(map, mod,
+                                            Integer.parseInt(roundSet[0]),
+                                            Integer.parseInt(roundSet[1]),
+                                            players
+                                    )
+                            );
+                        } else {
+                            leaderboard.addRecord(
+                                    new Record(map, mod,
+                                            Integer.parseInt(roundSet[0]),
+                                            players
+                                    )
+                            );
+                        }
                     }
                 }
             }
