@@ -1,5 +1,6 @@
 package Game.BlackOps3;
 
+import Bot.Main;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 
@@ -20,6 +21,12 @@ public class Record {
         this.mod = mod;
         this.endRound = round;
         this.players = players;
+
+        getPlayerWithHighestScore();
+        getPlayerWithHighestKills();
+        getPlayerWithHighestHeadshots();
+        getPlayerWithHighestRevives();
+        getPlayerWithLowestDowns();
     }
 
     public Record(Manager.Map map, Manager.Mod mod, int startRound, int endRound, Player[] players) {
@@ -28,6 +35,69 @@ public class Record {
         this.startRound = startRound;
         this.endRound = endRound;
         this.players = players;
+    }
+
+    public Player[] getPlayers() {
+        return players;
+    }
+
+    public Manager.Map getMap() {
+        return map;
+    }
+
+    private void getPlayerWithHighestScore() {
+        Player highest = null;
+        for (Player player : getPlayers()) {
+            if (highest == null || player.getScore() > highest.getScore()) highest = player;
+        }
+        assert highest != null;
+        highest.mostScore = true;
+    }
+
+    private void getPlayerWithHighestKills() {
+        Player highest = null;
+        for (Player player : getPlayers()) {
+            if (highest == null || player.getKills() > highest.getKills()) highest = player;
+        }
+        assert highest != null;
+        highest.mostKills = true;
+    }
+
+    private void getPlayerWithHighestHeadshots() {
+        Player highest = null;
+        for (Player player : getPlayers()) {
+            if (highest == null || player.getHeadshots() > highest.getHeadshots()) highest = player;
+        }
+        assert highest != null;
+        highest.mostHeadshots = true;
+    }
+
+    private void getPlayerWithHighestRevives() {
+        Player highest = null;
+        for (Player player : getPlayers()) {
+            if (highest == null || player.getRevives() > highest.getRevives()) highest = player;
+        }
+        assert highest != null;
+        highest.mostRevives = true;
+    }
+
+    private void getPlayerWithLowestDowns() {
+        Player highest = null;
+        for (Player player : getPlayers()) {
+            if (highest == null || (player.getDowns() < highest.getDowns() && player.getDowns() >= 0)) highest = player;
+        }
+        assert highest != null;
+        highest.leastDowns = true;
+    }
+
+    public void payPlayers() {
+        for (Player player : getPlayers()) {
+            EmbedBuilder embed = player.generatePayment(getPlayers().length);
+            embed.setFooter(getMap().getMapName());
+            Main.getNoctori().getTextChannelById(884994683166662706L).sendMessageEmbeds(
+                    embed.build()
+            ).queue();
+        }
     }
 
     public MessageEmbed getAsEmbed() {
