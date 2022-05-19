@@ -40,7 +40,11 @@ public class Manager {
         KYASSURU(                   "kyassuru",                 "Kyassuru",                     true),
         GRIT(                       "grit",                     "Grit",                         true),
         COVE(                       "cove",                     "Cove",                         true),
-        BLOCKADE(                   "blockade",                 "Blockade",                     true);
+        BLOCKADE(                   "blockade",                 "Blockade",                     true),
+        VOID_EXPANSE(               "voidExpanse",              "Void Expanse",                 true),
+        DOME_NUKETOWN_REIMAGINED(   "domeNuketownReimagined",   "Dome (Nuketown Reimagineed)",  true),
+        DER_FUHRERBUNKER(           "derFuhrerbunker",          "Der Führerbunker",             true),
+        SHUGEKI(                    "shugeki",                  "Shugeki",                      true);
 
         private final String fileName;
         private final String mapName;
