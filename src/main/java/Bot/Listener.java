@@ -1,6 +1,7 @@
 package Bot;
 
 import net.dv8tion.jda.api.entities.AudioChannel;
+import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
@@ -32,11 +33,22 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
         if (!e.getAuthor().isBot()) {
-            Bank.daily(e.getAuthor());
             String command = e.getMessage().getContentRaw();
             if (command.startsWith(COMMAND_SIGN)) {
                 command = e.getMessage().getContentRaw().substring(COMMAND_SIGN.length());
-                log.info(command + " Received!");
+                if (e.isFromType(ChannelType.PRIVATE)) {
+                    log.info("Private Command " + command + " Received!");
+                    switch (command) {
+                        case "notification" -> e.getChannel().sendMessage("Noticed").queue();
+                        default -> e.getMessage().reply("Unknown Command").queue();
+                    }
+                } else {
+                    Bank.daily(e.getAuthor());
+                    log.info(command + " Received!");
+                    switch (command) {
+                        default -> e.getMessage().reply("Unknown Command").queue();
+                    }
+                }
             }
         }
     }
