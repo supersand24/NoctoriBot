@@ -138,6 +138,23 @@ public class Var {
         }
     }
 
+    public static boolean toggleNotification(User user) {
+        try {
+            Path filePath = Paths.get("variables/" + user.getId() + ".var");
+            List<String> content = Files.readAllLines(filePath);
+            boolean notification = Boolean.parseBoolean(content.get(VAR_NOTIFICATION));
+            content.set(VAR_NOTIFICATION, String.valueOf(!notification));
+            log.debug("Set " + user.getName() + " toggled Notification Setting to " + !notification + ".");
+            Files.write(filePath, content, StandardCharsets.UTF_8);
+            return notification;
+        } catch (NoSuchFileException e) {
+            log.error(user.getId() + ".var file not found!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public static void updateDailyClaimed(User user) {
         try {
             Path filePath = Paths.get("variables/" + user.getId() + ".var");

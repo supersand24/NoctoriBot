@@ -1,5 +1,6 @@
 package Bot;
 
+import Command.Notification;
 import net.dv8tion.jda.api.entities.AudioChannel;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
@@ -17,17 +18,12 @@ import java.util.Objects;
 public class Listener extends ListenerAdapter {
 
     private final Logger log = LoggerFactory.getLogger(Listener.class);
-    private final long GUILD_ID = 444523714420408322L;
     private final String COMMAND_SIGN = "n!";
 
     @Override
     public void onReady(@NotNull ReadyEvent e) {
         log.info("Listener is ready!");
-        AutoVoiceManager.initialize(
-                Objects.requireNonNull(
-                        e.getJDA().getGuildById(GUILD_ID)
-                )
-        );
+        AutoVoiceManager.initialize(Main.getNoctori());
     }
 
     @Override
@@ -36,17 +32,28 @@ public class Listener extends ListenerAdapter {
             String command = e.getMessage().getContentRaw();
             if (command.startsWith(COMMAND_SIGN)) {
                 command = e.getMessage().getContentRaw().substring(COMMAND_SIGN.length());
-                if (e.isFromType(ChannelType.PRIVATE)) {
-                    log.info("Private Command " + command + " Received!");
-                    switch (command) {
-                        case "notification" -> e.getChannel().sendMessage("Noticed").queue();
-                        default -> e.getMessage().reply("Unknown Command").queue();
-                    }
-                } else {
-                    Bank.daily(e.getAuthor());
-                    log.info(command + " Received!");
-                    switch (command) {
-                        default -> e.getMessage().reply("Unknown Command").queue();
+                //Commands that can be used anywhere
+                switch (command) {
+                    //Commands that can not be used anywhere.
+                    default -> {
+                        //Private Channel only.
+                        if (e.isFromType(ChannelType.PRIVATE)) {
+                            log.info("Private Command " + command + " Received!");
+                            switch (command) {
+                                case "notification" -> new Notification(e.getAuthor(),e.getChannel());
+                                //Unknown Command
+                                default -> e.getMessage().reply("Unknown Command").queue();
+                            }
+                        }
+                        //Server Only
+                        else {
+                            Bank.daily(e.getAuthor());
+                            log.info(command + " Received!");
+                            switch (command) {
+                                //Unknown Command
+                                default -> e.getMessage().reply("Unknown Command").queue();
+                            }
+                        }
                     }
                 }
             }
