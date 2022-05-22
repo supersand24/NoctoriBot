@@ -20,9 +20,18 @@ public class Var {
 
     private final static Logger log = LoggerFactory.getLogger(Var.class);
 
+    private final static int VAR_MONEY = 0;
+    private final static int VAR_DAILY_CLAIMED_DATE = 1;
+    private final static int VAR_DAILIES_CLAIMED = 2;
+    private final static int VAR_NOTIFICATION = 3;
+    private final static int VAR_MEMBERS_INVITED = 4;
+    private final static int VAR_INVITED_BY_MEMBER = 5;
+    private final static int VAR_GAME_CLAIMED_DATE = 6;
+    private final static int VAR_GAME_KEYS = 7;
+
     public static int getMoney(User user) {
         try {
-            int money = Integer.parseInt(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(0));
+            int money = Integer.parseInt(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_MONEY));
             log.debug("Read " + user.getName() + " has " + money + " Noctori Bucks.");
             return money;
         } catch (NoSuchFileException e) {
@@ -37,7 +46,7 @@ public class Var {
         try {
             Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
-            content.set(0, String.valueOf(money));
+            content.set(VAR_MONEY, String.valueOf(money));
             log.debug("Set " + user.getName() + " Noctori Bucks to " + money + ".");
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
@@ -51,8 +60,8 @@ public class Var {
         try {
             Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
-            content.set(0, String.valueOf(Integer.parseInt(content.get(0)) + money));
-            log.debug("Gave " + money + " Noctori Bucks to " + user.getName() + ", new balance is " + content.get(0) + ".");
+            content.set(VAR_MONEY, String.valueOf(Integer.parseInt(content.get(VAR_MONEY)) + money));
+            log.debug("Gave " + money + " Noctori Bucks to " + user.getName() + ", new balance is " + content.get(VAR_MONEY) + ".");
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
             log.error(user.getId() + ".var file not found!");
@@ -65,11 +74,11 @@ public class Var {
         try {
             Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
-            int wallet = Integer.parseInt(content.get(0));
+            int wallet = Integer.parseInt(content.get(VAR_MONEY));
             if (wallet > money) {
-                content.set(0, String.valueOf(wallet - money));
+                content.set(VAR_MONEY, String.valueOf(wallet - money));
             }
-            log.debug("Took " + money + " Noctori Bucks from " + user.getName() + ", new balance is " + content.get(0) + ".");
+            log.debug("Took " + money + " Noctori Bucks from " + user.getName() + ", new balance is " + content.get(VAR_MONEY) + ".");
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
             log.error(user.getId() + ".var file not found!");
@@ -80,7 +89,7 @@ public class Var {
 
     public static LocalDate getDailyClaimed(User user) {
         try {
-            LocalDate dailyClaimed = LocalDate.parse(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(1));
+            LocalDate dailyClaimed = LocalDate.parse(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_DAILY_CLAIMED_DATE));
             log.debug("Read " + user.getName() + " was last active on " + dailyClaimed + ".");
             return dailyClaimed;
         } catch (NoSuchFileException e) {
@@ -93,7 +102,7 @@ public class Var {
 
     public static int getDailiesClaimed(User user) {
         try {
-            int dailiesClaimed = Integer.parseInt(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(2));
+            int dailiesClaimed = Integer.parseInt(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_DAILIES_CLAIMED));
             log.debug("Read " + user.getName() + " has claimed " + dailiesClaimed + " dailies.");
             return dailiesClaimed;
         } catch (NoSuchFileException e) {
@@ -106,7 +115,7 @@ public class Var {
 
     public static boolean getNotification(User user) {
         try {
-            return Boolean.parseBoolean(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(3));
+            return Boolean.parseBoolean(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_NOTIFICATION));
         } catch (NoSuchFileException e) {
             log.error(user.getId() + ".var file not found!");
         } catch (IOException e) {
@@ -119,7 +128,7 @@ public class Var {
         try {
             Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
-            content.set(3, String.valueOf(bool));
+            content.set(VAR_NOTIFICATION, String.valueOf(bool));
             log.debug("Set " + user.getName() + " Notification Setting " + bool + ".");
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
@@ -134,9 +143,9 @@ public class Var {
             Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
             LocalDate now = LocalDate.now();
-            int dailiesClaimed = Integer.parseInt(content.get(2)) + 1;
-            content.set(1, now.toString());
-            content.set(2, String.valueOf(dailiesClaimed));
+            int dailiesClaimed = Integer.parseInt(content.get(VAR_DAILIES_CLAIMED)) + 1;
+            content.set(VAR_DAILY_CLAIMED_DATE, now.toString());
+            content.set(VAR_DAILIES_CLAIMED, String.valueOf(dailiesClaimed));
             log.debug("Set " + user.getName() + " daily claimed to " + now + ".");
             log.debug("Set " + user.getName() + " has claimed " + dailiesClaimed + " dailies.");
             Files.write(filePath, content, StandardCharsets.UTF_8);
@@ -149,7 +158,7 @@ public class Var {
 
     public static List<String> getMembersInvited(User user) {
         try {
-            List<String> membersInvited = parseStringArray(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(4));
+            List<String> membersInvited = parseStringArray(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_MEMBERS_INVITED));
             log.debug("Read " + user.getName() + " invited " + membersInvited + " to the server.");
             return membersInvited;
         } catch (NoSuchFileException e) {
@@ -164,7 +173,7 @@ public class Var {
         try {
             Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
-            List<String> members = parseStringArray(content.get(4));
+            List<String> members = parseStringArray(content.get(VAR_MEMBERS_INVITED));
             members.add(member.getId());
             content.set(4, members.toString() );
             log.debug(user.getName() + " invited " + member.getEffectiveName() + " to the Server.");
@@ -178,7 +187,7 @@ public class Var {
 
     public static String getInvitedByMember(User user) {
         try {
-            String invitedByMember = Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(5);
+            String invitedByMember = Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_INVITED_BY_MEMBER);
             if (invitedByMember.equals("0")) {
                 log.debug("Read " + user.getName() + " was invited by no one.");
             } else {
@@ -197,7 +206,7 @@ public class Var {
         try {
             Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
-            content.set(5, member.getId());
+            content.set(VAR_INVITED_BY_MEMBER, member.getId());
             log.debug("Set " + user.getName() + " was invited by " + member.getEffectiveName() + ".");
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
@@ -209,7 +218,7 @@ public class Var {
 
     public static LocalDate getGameClaimed(User user) {
         try {
-            LocalDate gameClaimedDate = LocalDate.parse(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(6));
+            LocalDate gameClaimedDate = LocalDate.parse(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_GAME_CLAIMED_DATE));
             log.debug("Read " + user.getName() + " last claimed a game on " + gameClaimedDate + ".");
             return gameClaimedDate;
         } catch (NoSuchFileException e) {
@@ -222,7 +231,7 @@ public class Var {
 
     public static List<String> getGameKeys(User user) {
         try {
-            List<String> gameKeys = parseStringArray(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(7));
+            List<String> gameKeys = parseStringArray(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_GAME_KEYS));
             log.debug("Read " + user.getName() + " owns these game keys " + gameKeys);
             return gameKeys;
         } catch (NoSuchFileException e) {
@@ -237,11 +246,11 @@ public class Var {
         try {
             Path filePath = Paths.get("variables/" + user.getId() + ".var");
             List<String> content = Files.readAllLines(filePath);
-            List<String> gameKeys = parseStringArray(content.get(7));
+            List<String> gameKeys = parseStringArray(content.get(VAR_GAME_KEYS));
             gameKeys.add(game);
             LocalDate now = LocalDate.now();
-            content.set(6, now.toString() );
-            content.set(7, gameKeys.toString() );
+            content.set(VAR_GAME_CLAIMED_DATE, now.toString() );
+            content.set(VAR_GAME_KEYS, gameKeys.toString() );
             log.debug("Set " + user.getName() + " last claimed game date to " + now + ".");
             log.debug("Added " + game + " to " + user.getName() + "'s game collection.");
             Files.write(filePath, content, StandardCharsets.UTF_8);
