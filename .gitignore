@@ -29,3 +29,4 @@ bot.token
 leaderboards/*
 src/main/resources/logback.xml
 target/classes/logback.xml
+.idea/uiDesigner.xml
