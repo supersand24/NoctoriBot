@@ -20,13 +20,14 @@ public class Bank {
     private final static int PAY_SERVER_BOOSTER = 70;
     private final static int PAY_SERVER_BOOSTER_PER_MONTH = 2;
 
-    public static void daily(User user) {
-        if ( LocalDate.now().compareTo(Var.getDailyClaimed(user)) > 0) {
-            log.info(user.getName() + " has logged in for the day.");
+    public static void daily(Member member) {
+        if ( LocalDate.now().compareTo(Var.getDailyClaimed(member.getUser())) > 0) {
+            log.info(member.getEffectiveName() + " has logged in for the day.");
+            User user = member.getUser();
             Var.updateDailyClaimed(user);
             if (Var.getNotification(user)) {
                 user.openPrivateChannel().queue(privateChannel -> {
-                   privateChannel.sendMessageEmbeds( payDaily(Main.getNoctori().getMemberById(user.getId())) ).queue();
+                   privateChannel.sendMessageEmbeds( payDaily(member) ).queue();
                 });
             }
         }
@@ -39,6 +40,7 @@ public class Bank {
 
         embed.setAuthor(member.getEffectiveName(),member.getEffectiveAvatarUrl(),member.getEffectiveAvatarUrl());
         embed.setTitle("Pay Stub");
+        embed.setFooter("Use n!notification to disable these.");
 
         //Months
         Period timeJoined = Period.between(
@@ -51,13 +53,15 @@ public class Bank {
 
         //Server Boosting
         if (member.isBoosting()) {
+            total += PAY_SERVER_BOOSTER;
             embed.addField("Server Booster", "$" + PAY_SERVER_BOOSTER, true);
             Period timeBoosted = Period.between(
                     member.getTimeBoosted().toLocalDate(),
                     LocalDate.now()
             );
-            total += Math.max(0,timeBoosted.toTotalMonths() * PAY_SERVER_BOOSTER_PER_MONTH);
-            embed.addField("Months Server Boosted", "$" + PAY_SERVER_BOOSTER_PER_MONTH, true);
+            payTemp = Math.max(0,timeBoosted.toTotalMonths() * PAY_SERVER_BOOSTER_PER_MONTH);
+            total += payTemp;
+            embed.addField("Months Server Boosted", "$" + payTemp, true);
         }
 
         embed.setDescription("You were paid $" + total + " for being active in Noctori on " + LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)) + ".");

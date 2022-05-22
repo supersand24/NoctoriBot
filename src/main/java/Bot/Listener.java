@@ -47,7 +47,7 @@ public class Listener extends ListenerAdapter {
                         }
                         //Server Only
                         else {
-                            Bank.daily(e.getAuthor());
+                            Bank.daily(e.getMember());
                             log.info(command + " Received!");
                             switch (command) {
                                 //Unknown Command
@@ -65,7 +65,7 @@ public class Listener extends ListenerAdapter {
         AudioChannel audioChannel = e.getChannelJoined();
         Member member = e.getMember();
         log.info(member.getEffectiveName() + " joined " + audioChannel.getName() + ".");
-        Bank.daily(e.getMember().getUser());
+        Bank.daily(e.getMember());
     }
 
     @Override
