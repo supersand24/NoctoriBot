@@ -29,9 +29,10 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
         if (!e.getAuthor().isBot()) {
-            String command = e.getMessage().getContentRaw();
-            if (command.startsWith(COMMAND_SIGN.toLowerCase()) || command.startsWith(COMMAND_SIGN.toUpperCase())) {
-                command = e.getMessage().getContentRaw().substring(COMMAND_SIGN.length());
+            String message = e.getMessage().getContentStripped();
+            if (message.startsWith(COMMAND_SIGN.toLowerCase()) || message.startsWith(COMMAND_SIGN.toUpperCase())) {
+                String[] messageSplit = message.split("\\s+");
+                String command = messageSplit[0].substring(COMMAND_SIGN.length());
                 //Commands that can be used anywhere
                 switch (command) {
                     case "balance" -> new Balance(e.getAuthor(),e.getChannel());
