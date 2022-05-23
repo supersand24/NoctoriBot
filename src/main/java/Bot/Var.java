@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
 public class Var {
 
@@ -286,6 +287,55 @@ public class Var {
             strings = array.substring(1, array.length() - 1).split(", ");
         }
         return new ArrayList<>(Arrays.asList(strings));
+    }
+
+    private static void insertVariableForAll(int insertIndex, String defaultVar, boolean save) {
+        for ( Member member : Main.getNoctori().getMembers() ) {
+            try {
+                Path filePath = Paths.get("variables/" + member.getId() + ".var");
+                List<String> content = Files.readAllLines(filePath);
+                content.add(insertIndex,defaultVar);
+                if (save) {
+                    Files.write(filePath, content, StandardCharsets.UTF_8);
+                } else {
+                    System.out.println(content);
+                }
+            } catch (NoSuchFileException e) {
+                log.error(member.getId() + ".var file not found!");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static void createNewVariable(int insertIndex, String defaultVar) {
+        insertVariableForAll(insertIndex, defaultVar, false);
+        System.out.println("Format Okay? 1 = Yes");
+        Scanner in = new Scanner(System.in);
+        insertVariableForAll(insertIndex, defaultVar, (in.nextInt() == 1));
+        if (in.nextInt() == 1) {
+            insertVariableForAll(insertIndex, defaultVar, true);
+            log.info("Changes were saved.");
+        } else {
+            log.info("Changes were not saved.");
+        }
+        in.close();
+    }
+
+    public static void createNewVariable(int insertIndex, int defaultVar) {
+        createNewVariable(insertIndex,String.valueOf(defaultVar));
+    }
+
+    public static void createNewVariable(int insertIndex, long defaultVar) {
+        createNewVariable(insertIndex,String.valueOf(defaultVar));
+    }
+
+    public static void createNewVariable(int insertIndex, double defaultVar) {
+        createNewVariable(insertIndex,String.valueOf(defaultVar));
+    }
+
+    public static void createNewVariable(int insertIndex, boolean defaultVar) {
+        createNewVariable(insertIndex,String.valueOf(defaultVar));
     }
 
 
