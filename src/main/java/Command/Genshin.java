@@ -24,7 +24,7 @@ public class Genshin {
                 if (arguments[1].length() == 9) {
                     try {
                         Var.setGenshinUid(member.getUser(), Long.parseLong(arguments[1]));
-                        message.reply("Set " + arguments[1] + " to be your UID.").queue();
+                        message.reply("Set `" + arguments[1] + "` to be your UID.").queue();
                     } catch (NumberFormatException e) {
                         message.reply(arguments[1] + " is not an uid!").queue();
                     }
