@@ -1,13 +1,12 @@
 package Bot;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -23,6 +22,7 @@ public class Bank {
     public static void daily(Member member) {
         if ( LocalDate.now().compareTo(Var.getDailyClaimed(member.getUser())) > 0) {
             log.info(member.getEffectiveName() + " has logged in for the day.");
+            anniversary(member);
             User user = member.getUser();
             Var.updateDailyClaimed(user);
             if (Var.getNotification(user)) {
@@ -68,6 +68,26 @@ public class Bank {
 
         Var.addMoney(member.getUser(),total);
         return embed.build();
+    }
+
+    public static void anniversary(Member member) {
+        int yearsJoined = OffsetDateTime.now().getYear() - member.getTimeJoined().getYear();
+        Role role = getYearRole(yearsJoined);
+        if (!member.getRoles().contains(role)) {
+            log.info("Updating " + member.getEffectiveName() + " Yearly Role.");
+            Main.getNoctori().addRoleToMember(member,role).queue();
+            for (int i = 0; i < yearsJoined; i++) {
+                Role removeRole = getYearRole(i);
+                log.debug("Removing " + removeRole.getName() + " Role.");
+                Main.getNoctori().removeRoleFromMember(member,removeRole).queue();
+            }
+        }
+    }
+
+    private static Role getYearRole(int year) {
+        StringBuilder string = new StringBuilder();
+        string.append(year).append(" Year"); if (year != 1) string.append("s");
+        return Main.getNoctori().getRolesByName(string.toString(),true).get(0);
     }
 
 }
