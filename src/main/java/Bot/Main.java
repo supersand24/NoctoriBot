@@ -19,6 +19,8 @@ public class Main {
     private final static Logger log = LoggerFactory.getLogger(Main.class);
     private static JDA jda;
 
+    private static Guild noctori;
+
     public static void main(String[] args) {
 
         JDABuilder builder = JDABuilder.create(
@@ -56,7 +58,10 @@ public class Main {
     }
 
     public static Guild getNoctori() {
-        return jda.getGuilds().get(0);
+        if (noctori == null) {
+            noctori = jda.getGuilds().get(0);
+        }
+        return noctori;
     }
 
 }
