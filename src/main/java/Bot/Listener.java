@@ -1,6 +1,6 @@
 package Bot;
 
-import Command.Notification;
+import Command.*;
 import net.dv8tion.jda.api.entities.AudioChannel;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
@@ -30,10 +30,11 @@ public class Listener extends ListenerAdapter {
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
         if (!e.getAuthor().isBot()) {
             String command = e.getMessage().getContentRaw();
-            if (command.startsWith(COMMAND_SIGN)) {
+            if (command.startsWith(COMMAND_SIGN.toLowerCase()) || command.startsWith(COMMAND_SIGN.toUpperCase())) {
                 command = e.getMessage().getContentRaw().substring(COMMAND_SIGN.length());
                 //Commands that can be used anywhere
                 switch (command) {
+                    case "balance" -> new Balance(e.getAuthor(),e.getChannel());
                     //Commands that can not be used anywhere.
                     default -> {
                         //Private Channel only.
