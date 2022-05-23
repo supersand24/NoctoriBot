@@ -29,6 +29,7 @@ public class Var {
     private final static int VAR_INVITED_BY_MEMBER = 5;
     private final static int VAR_GAME_CLAIMED_DATE = 6;
     private final static int VAR_GAME_KEYS = 7;
+    private final static int VAR_GENSHIN_UID = 8;
 
     public static int getMoney(User user) {
         try {
@@ -271,6 +272,33 @@ public class Var {
             content.set(VAR_GAME_KEYS, gameKeys.toString() );
             log.debug("Set " + user.getName() + " last claimed game date to " + now + ".");
             log.debug("Added " + game + " to " + user.getName() + "'s game collection.");
+            Files.write(filePath, content, StandardCharsets.UTF_8);
+        } catch (NoSuchFileException e) {
+            log.error(user.getId() + ".var file not found!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static long getGenshinUid(User user) {
+        try {
+            long uid = Long.parseLong(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_GENSHIN_UID));
+            log.debug("Read " + user.getName() + " Genshin UID " + uid);
+            return uid;
+        } catch (NoSuchFileException e) {
+            log.error(user.getId() + ".var file not found!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public static void setGenshinUid(User user, long uid) {
+        try {
+            Path filePath = Paths.get("variables/" + user.getId() + ".var");
+            List<String> content = Files.readAllLines(filePath);
+            content.set(VAR_GENSHIN_UID, String.valueOf(uid));
+            log.debug("Set " + user.getName() + " Genshin UID to " + uid + ".");
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
             log.error(user.getId() + ".var file not found!");
