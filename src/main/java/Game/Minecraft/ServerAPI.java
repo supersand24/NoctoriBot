@@ -1,5 +1,6 @@
 package Game.Minecraft;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -15,11 +16,24 @@ public class ServerAPI {
     private static final String SERVER_IP = "76.105.66.107";
     private static final int SERVER_PORT = 4567;
 
-    public static JsonObject getJson(String string) {
+    public static String getOnlinePlayers() {
+        JsonElement json = getJson("players");
+        if (json.toString().equals("[]")) {
+            return "No Online Players";
+        } else {
+            StringBuilder stringBuilder = new StringBuilder();
+            for (JsonElement jsonE : json.getAsJsonArray()) {
+                stringBuilder.append(jsonE.getAsJsonObject().get("displayName").toString()).append("\n");
+            }
+            return stringBuilder.toString();
+        }
+    }
+
+    public static JsonElement getJson(String string) {
         try {
             URL url = new URL("http://" + SERVER_IP + ":" + SERVER_PORT + "/v1/" + string);
             URLConnection urlConnection = url.openConnection();
-            return new JsonParser().parse(getString(urlConnection.getInputStream())).getAsJsonObject();
+            return new JsonParser().parse(getString(urlConnection.getInputStream()));
         } catch (IOException e) {
             e.printStackTrace();
         }
