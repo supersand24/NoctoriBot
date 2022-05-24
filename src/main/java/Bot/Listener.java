@@ -51,10 +51,19 @@ public class Listener extends ListenerAdapter {
                         else {
                             Bank.daily(e.getMember());
                             log.info(command + " Received!");
-                            switch (command) {
-                                case "genshin" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
-                                //Unknown Command
-                                default -> e.getMessage().reply("Unknown Command").queue();
+                            switch (e.getChannel().getName()) {
+                                case "minecraft" -> {
+                                    switch (command) {
+                                        
+                                    }
+                                }
+                                default -> {
+                                    switch (command) {
+                                        case "genshin" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
+                                        //Unknown Command
+                                        default -> e.getMessage().reply("Unknown Command").queue();
+                                    }
+                                }
                             }
                         }
                     }
