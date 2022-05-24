@@ -30,6 +30,7 @@ public class Var {
     private final static int VAR_GAME_CLAIMED_DATE = 6;
     private final static int VAR_GAME_KEYS = 7;
     private final static int VAR_GENSHIN_UID = 8;
+    private final static int VAR_MINECRAFT_USERNAME = 9;
 
     public static int getMoney(User user) {
         try {
@@ -299,6 +300,33 @@ public class Var {
             List<String> content = Files.readAllLines(filePath);
             content.set(VAR_GENSHIN_UID, String.valueOf(uid));
             log.debug("Set " + user.getName() + " Genshin UID to " + uid + ".");
+            Files.write(filePath, content, StandardCharsets.UTF_8);
+        } catch (NoSuchFileException e) {
+            log.error(user.getId() + ".var file not found!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static String getMinecraftUsername(User user) {
+        try {
+            String username = Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_MINECRAFT_USERNAME);
+            log.debug("Read " + user.getName() + " Minecraft Username is " + username);
+            return username;
+        } catch (NoSuchFileException e) {
+            log.error(user.getId() + ".var file not found!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public static void setMinecraftUsername(User user, String username) {
+        try {
+            Path filePath = Paths.get("variables/" + user.getId() + ".var");
+            List<String> content = Files.readAllLines(filePath);
+            content.set(VAR_MINECRAFT_USERNAME, username);
+            log.debug("Set " + user.getName() + " Minecraft Username to " + username + ".");
             Files.write(filePath, content, StandardCharsets.UTF_8);
         } catch (NoSuchFileException e) {
             log.error(user.getId() + ".var file not found!");
