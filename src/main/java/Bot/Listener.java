@@ -1,6 +1,7 @@
 package Bot;
 
 import Command.*;
+import Game.Minecraft.ServerAPI;
 import net.dv8tion.jda.api.entities.AudioChannel;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.entities.Member;
@@ -54,7 +55,7 @@ public class Listener extends ListenerAdapter {
                             switch (e.getChannel().getName()) {
                                 case "minecraft" -> {
                                     switch (command) {
-                                        
+                                        case "onlinePlayers" -> e.getMessage().reply(ServerAPI.getOnlinePlayers()).queue();
                                     }
                                 }
                                 default -> {
