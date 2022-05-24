@@ -23,7 +23,9 @@ public class ServerAPI {
         } else {
             StringBuilder stringBuilder = new StringBuilder();
             for (JsonElement jsonE : json.getAsJsonArray()) {
-                stringBuilder.append(jsonE.getAsJsonObject().get("displayName").toString()).append("\n");
+                String username = jsonE.getAsJsonObject().get("displayName").toString();
+                username = username.substring(1,username.length() - 1);
+                stringBuilder.append(username).append("\n");
             }
             return stringBuilder.toString();
         }
