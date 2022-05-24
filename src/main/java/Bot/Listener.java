@@ -57,7 +57,7 @@ public class Listener extends ListenerAdapter {
                                 case "minecraft" -> {
                                     switch (command) {
                                         case "username" -> new Username(e.getMember(), e.getMessage(), messageSplit);
-                                        case "onlinePlayers" -> e.getMessage().reply(ServerAPI.getOnlinePlayers()).queue();
+                                        case "onlinePlayers" -> e.getMessage().reply(ServerAPI.getOnlinePlayers()).mentionRepliedUser(false).queue();
                                     }
                                 }
                                 default -> {

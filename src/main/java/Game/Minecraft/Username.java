@@ -16,16 +16,16 @@ public class Username {
                 User user = mentionedUsers.get(0);
                 String username = Var.getMinecraftUsername(user);
                 if (username.isEmpty()) {
-                    message.reply(user.getName() + " does not have a Minecraft Username set, they can do so my using `n!username <INSERT USERNAME>`").queue();
+                    message.reply(user.getName() + " does not have a Minecraft Username set, they can do so my using `n!username <INSERT USERNAME>`").mentionRepliedUser(false).queue();
                 } else {
-                    message.reply(user.getName() + " Minecraft Username is `" + username + "`").queue();
+                    message.reply(user.getName() + " Minecraft Username is `" + username + "`").mentionRepliedUser(false).queue();
                 }
             } else {
                 Var.setMinecraftUsername(member.getUser(), arguments[1]);
-                message.reply("Set `" + arguments[1] + "` to be your Minecraft Username.").queue();
+                message.reply("Set `" + arguments[1] + "` to be your Minecraft Username.").mentionRepliedUser(false).queue();
             }
         } else {
-            message.reply("Not enough arguments!").queue();
+            message.reply("Not enough arguments!").mentionRepliedUser(false).queue();
         }
     }
 
