@@ -336,11 +336,29 @@ public class Var {
         }
     }
 
+    private static void deleteVariableForAll(int insertIndex, boolean save) {
+        for ( Member member : Main.getNoctori().getMembers() ) {
+            try {
+                Path filePath = Paths.get("variables/" + member.getId() + ".var");
+                List<String> content = Files.readAllLines(filePath);
+                content.remove(insertIndex);
+                if (save) {
+                    Files.write(filePath, content, StandardCharsets.UTF_8);
+                } else {
+                    System.out.println(content);
+                }
+            } catch (NoSuchFileException e) {
+                log.error(member.getId() + ".var file not found!");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public static void createNewVariable(int insertIndex, String defaultVar) {
         insertVariableForAll(insertIndex, defaultVar, false);
         System.out.println("Format Okay? 1 = Yes");
         Scanner in = new Scanner(System.in);
-        insertVariableForAll(insertIndex, defaultVar, (in.nextInt() == 1));
         if (in.nextInt() == 1) {
             insertVariableForAll(insertIndex, defaultVar, true);
             log.info("Changes were saved.");
@@ -364,6 +382,19 @@ public class Var {
 
     public static void createNewVariable(int insertIndex, boolean defaultVar) {
         createNewVariable(insertIndex,String.valueOf(defaultVar));
+    }
+
+    public static void deleteVariable(int deleteIndex) {
+        deleteVariableForAll(deleteIndex, false);
+        System.out.println("Format Okay? 1 = Yes");
+        Scanner in = new Scanner(System.in);
+        if (in.nextInt() == 1) {
+            deleteVariableForAll(deleteIndex, true);
+            log.info("Changes were saved.");
+        } else {
+            log.info("Changes were not saved.");
+        }
+        in.close();
     }
 
 
