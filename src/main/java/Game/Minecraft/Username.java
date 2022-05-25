@@ -14,15 +14,20 @@ public class Username {
             List<User> mentionedUsers = message.getMentionedUsers();
             if (mentionedUsers.size() > 0) {
                 User user = mentionedUsers.get(0);
-                String username = Var.getMinecraftUsername(user);
+                String username = ServerAPI.getUsername(Var.getMinecraftUsername(user));
                 if (username.isEmpty()) {
                     message.reply(user.getName() + " does not have a Minecraft Username set, they can do so my using `n!username <INSERT USERNAME>`").mentionRepliedUser(false).queue();
                 } else {
                     message.reply(user.getName() + " Minecraft Username is `" + username + "`").mentionRepliedUser(false).queue();
                 }
             } else {
-                Var.setMinecraftUsername(member.getUser(), arguments[1]);
-                message.reply("Set `" + arguments[1] + "` to be your Minecraft Username.").mentionRepliedUser(false).queue();
+                String uuid = ServerAPI.getUUID(arguments[1]);
+                if (uuid != null) {
+                    Var.setMinecraftUsername(member.getUser(), uuid);
+                    message.reply("Set `" + arguments[1] + "` to be your Minecraft Username.").mentionRepliedUser(false).queue();
+                } else {
+                    message.reply("Could not find a Minecraft Account under that Username!").mentionRepliedUser(false).queue();
+                }
             }
         } else {
             message.reply("Not enough arguments!").mentionRepliedUser(false).queue();

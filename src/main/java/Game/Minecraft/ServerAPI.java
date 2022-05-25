@@ -57,8 +57,10 @@ public class ServerAPI {
             URL url = new URL("https://api.mojang.com/users/profiles/minecraft/" + username);
             URLConnection urlConnection = url.openConnection();
             String uuid = new JsonParser().parse(getString(urlConnection.getInputStream())).getAsJsonObject().get("id").toString();
-            uuid = uuid.substring(1,uuid.length() - 1);
+            uuid = uuid.substring(1, uuid.length() - 1);
             return uuid;
+        } catch (IllegalStateException e) {
+            return null;
         } catch (IOException e) {
             e.printStackTrace();
         }
