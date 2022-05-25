@@ -1,6 +1,7 @@
 package Game.Minecraft;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.BufferedReader;
@@ -9,25 +10,28 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ServerAPI {
 
     private static final String SERVER_IP = "76.105.66.107";
     private static final int SERVER_PORT = 4567;
 
-    public static String getOnlinePlayers() {
+    public static List<Player> getOnlinePlayers() {
+        List<Player> playerList = new ArrayList<>();
         JsonElement json = getJson("players");
-        if (json.toString().equals("[]")) {
-            return "No Online Players";
-        } else {
-            StringBuilder stringBuilder = new StringBuilder();
-            for (JsonElement jsonE : json.getAsJsonArray()) {
-                String username = jsonE.getAsJsonObject().get("displayName").toString();
-                username = username.substring(1,username.length() - 1);
-                stringBuilder.append(username).append("\n");
-            }
-            return stringBuilder.toString();
+        for (JsonElement jsonE : json.getAsJsonArray()) {
+            JsonObject jsonObject = jsonE.getAsJsonObject();
+            playerList.add(new Player(
+                            jsonObject.get("uuid").getAsString(),
+                            jsonObject.get("displayName").getAsString(),
+                            jsonObject.get("location"),
+                            jsonObject.get("dimension").getAsString()
+                    )
+            );
         }
+        return playerList;
     }
 
     public static JsonElement getJson(String string) {

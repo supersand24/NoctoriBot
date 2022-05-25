@@ -1,6 +1,7 @@
 package Bot;
 
 import Command.*;
+import Game.Minecraft.GetOnlinePlayers;
 import Game.Minecraft.ServerAPI;
 import Game.Minecraft.Username;
 import net.dv8tion.jda.api.entities.AudioChannel;
@@ -57,7 +58,7 @@ public class Listener extends ListenerAdapter {
                                 case "minecraft" -> {
                                     switch (command) {
                                         case "username" -> new Username(e.getMember(), e.getMessage(), messageSplit);
-                                        case "onlinePlayers" -> e.getMessage().reply(ServerAPI.getOnlinePlayers()).mentionRepliedUser(false).queue();
+                                        case "onlinePlayers" -> new GetOnlinePlayers(e.getMessage());
                                     }
                                 }
                                 default -> {
