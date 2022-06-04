@@ -13,10 +13,8 @@ public class AutoVoiceManager {
 
     public final static List<AutoVoice> channels = new ArrayList<>();
     private final static long textChannelId = 964666264867967008L;
-    private static TextChannel textChannel;
 
     public static void initialize(Guild guild) {
-        textChannel = guild.getTextChannelById(textChannelId);
         log.debug("Auto Voice Manager initialized.");
     }
 
@@ -26,23 +24,25 @@ public class AutoVoiceManager {
     public static void join(Member member, VoiceChannel voiceChannel) {
         if (voiceChannel.getName().equalsIgnoreCase("New Channel")) {
             newChannel(member, voiceChannel);
-        } else {
-            AutoVoice av = getAutoVoice(voiceChannel);
-            av.getThread().sendMessage(member.getEffectiveName() + " has joined the voice channel.").queue();
         }
     }
 
     public static void newChannel(Member member, VoiceChannel voiceChannel) {
-        textChannel.createThreadChannel("Voice Channel Text").queue(
-                threadChannel -> {
-                    threadChannel.addThreadMember(member).queue( unused -> {
-                        threadChannel.sendMessage(member.getEffectiveName() + " has created the voice channel.").queue();
-                    } );
-                    channels.add(new AutoVoice(member, voiceChannel, threadChannel));
-                    voiceChannel.createCopy().queue();
-                    voiceChannel.getManager().setName("Vibing").queue();
-                }
-        );
+        voiceChannel.createCopy().queue();
+        voiceChannel.getManager().setName("Voice Channel").queue();
+        log.info("New Channel Created.");
+    }
+
+    public static void leave(Member member, AudioChannel audioChannel) {
+        leave(member,convertAudioChannel(audioChannel));
+    }
+
+    public static void leave(Member member, VoiceChannel voiceChannel) {
+        if (voiceChannel.getParentCategory().getName().equals("Auto Voice (WIP)")) {
+            if (voiceChannel.getMembers().size() <= 0) {
+                voiceChannel.delete().queue();
+            }
+        }
     }
 
     private static AutoVoice getAutoVoice(VoiceChannel voiceChannel) {
