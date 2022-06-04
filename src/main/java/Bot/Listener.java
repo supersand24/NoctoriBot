@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -78,10 +79,26 @@ public class Listener extends ListenerAdapter {
         Member member = e.getMember();
         log.info(member.getEffectiveName() + " joined " + audioChannel.getName() + ".");
         Bank.daily(e.getMember());
+        AutoVoiceManager.join(member,audioChannel);
     }
 
     @Override
     public void onGuildVoiceLeave(@NotNull GuildVoiceLeaveEvent e) {
-        log.info(e.getMember().getEffectiveName() + " left " + e.getChannelLeft().getName() + ".");
+        AudioChannel audioChannel = e.getChannelLeft();
+        Member member = e.getMember();
+        log.info(member.getEffectiveName() + " left " + audioChannel.getName() + ".");
+        AutoVoiceManager.leave(member,audioChannel);
     }
+
+    @Override
+    public void onGuildVoiceMove(@NotNull GuildVoiceMoveEvent e) {
+        AudioChannel joinedChannel = e.getChannelJoined();
+        AudioChannel leftChannel = e.getChannelLeft();
+        Member member = e.getMember();
+        log.info(member.getEffectiveName() + " left " + leftChannel.getName() + ".");
+        AutoVoiceManager.leave(member,leftChannel);
+        log.info(member.getEffectiveName() + " joined " + joinedChannel.getName() + ".");
+        AutoVoiceManager.join(member,joinedChannel);
+    }
+}
 }
