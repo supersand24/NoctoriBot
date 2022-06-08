@@ -16,10 +16,6 @@ public class AutoVoiceManager {
     public final static List<AutoVoice> channels = new ArrayList<>();
     private final static long textChannelId = 964666264867967008L;
 
-    public static void initialize(Guild guild) {
-        log.debug("Auto Voice Manager initialized.");
-    }
-
     public static void join(Member member, AudioChannel audioChannel) {
         join(member,convertAudioChannel(audioChannel));
     }
