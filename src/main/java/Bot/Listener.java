@@ -3,18 +3,20 @@ package Bot;
 import Command.*;
 import net.dv8tion.jda.api.entities.AudioChannel;
 import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.user.UserActivityEndEvent;
+import net.dv8tion.jda.api.events.user.UserActivityStartEvent;
+import net.dv8tion.jda.api.events.user.update.UserUpdateActivitiesEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
 
 public class Listener extends ListenerAdapter {
 
@@ -74,12 +76,19 @@ public class Listener extends ListenerAdapter {
     }
 
     @Override
+    public void onUserUpdateActivities(@NotNull UserUpdateActivitiesEvent e) {
+        GuildVoiceState voiceState = e.getMember().getVoiceState();
+        if (voiceState.inAudioChannel()) AutoVoiceManager.updateChannelName(voiceState.getChannel());
+    }
+
+    @Override
     public void onGuildVoiceJoin(@NotNull GuildVoiceJoinEvent e) {
         AudioChannel audioChannel = e.getChannelJoined();
         Member member = e.getMember();
         log.info(member.getEffectiveName() + " joined " + audioChannel.getName() + ".");
         Bank.daily(e.getMember());
         AutoVoiceManager.join(member,audioChannel);
+        AutoVoiceManager.updateChannelName(audioChannel);
     }
 
     @Override
@@ -88,6 +97,7 @@ public class Listener extends ListenerAdapter {
         Member member = e.getMember();
         log.info(member.getEffectiveName() + " left " + audioChannel.getName() + ".");
         AutoVoiceManager.leave(member,audioChannel);
+        AutoVoiceManager.updateChannelName(audioChannel);
     }
 
     @Override
@@ -97,8 +107,9 @@ public class Listener extends ListenerAdapter {
         Member member = e.getMember();
         log.info(member.getEffectiveName() + " left " + leftChannel.getName() + ".");
         AutoVoiceManager.leave(member,leftChannel);
+        AutoVoiceManager.updateChannelName(leftChannel);
         log.info(member.getEffectiveName() + " joined " + joinedChannel.getName() + ".");
         AutoVoiceManager.join(member,joinedChannel);
+        AutoVoiceManager.updateChannelName(joinedChannel);
     }
-}
 }
