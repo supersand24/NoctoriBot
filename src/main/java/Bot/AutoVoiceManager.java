@@ -31,7 +31,7 @@ public class AutoVoiceManager {
 
     public static void newChannel(Member member, VoiceChannel voiceChannel) {
         voiceChannel.createCopy().queue();
-        voiceChannel.getManager().setName("Voice Channel").queue();
+        renameChannel(voiceChannel,"Vibing");
         log.info("New Channel Created.");
     }
 
@@ -53,8 +53,7 @@ public class AutoVoiceManager {
         if (voiceChannel.getName().equals(mostCommonKey)) {
             log.debug("Attempted to rename " + voiceChannel.getName() + " VC to " + mostCommonKey);
         } else {
-            log.info("Renamed " + voiceChannel.getName() + " VC to " + mostCommonKey);
-            voiceChannel.getManager().setName(mostCommonKey).queue();
+            renameChannel(voiceChannel,mostCommonKey);
         }
     }
 
@@ -65,7 +64,23 @@ public class AutoVoiceManager {
             if (!member.getUser().isBot()) {
                 for (Activity activity : member.getActivities()) {
                     switch (activity.getType()) {
-                        case PLAYING -> hashMap.merge(activity.getName(), 1, Integer::sum);
+                        case PLAYING -> {
+                            switch (activity.getName()) {
+                                case "Fortnite" -> {
+                                    if (activity.isRich()) {
+                                        switch (activity.asRichPresence().getDetails()) {
+                                            case "Battle Royale - In Lobby" -> hashMap.merge("Fortnite: Battle Royale", 1, Integer::sum);
+                                            case "Save The World" -> hashMap.merge("Fortnite: Save the World", 1, Integer::sum);
+                                            default -> {
+                                                log.info("Unchecked Fortnite Rich Presence Case : " + activity.asRichPresence().getDetails());
+                                                hashMap.merge(activity.getName(), 1, Integer::sum);
+                                            }
+                                        }
+                                    }
+                                }
+                                default -> hashMap.merge(activity.getName(), 1, Integer::sum);
+                            }
+                        }
                     }
                 }
             }
@@ -74,10 +89,12 @@ public class AutoVoiceManager {
     }
 
     public static void renameChannel(AudioChannel audioChannel, String name) {
+        log.info("Renamed " + audioChannel.getName() + " VC to " + name);
         audioChannel.getManager().setName(name).queue();
     }
 
     public static void renameChannel(VoiceChannel voiceChannel, String name) {
+        log.info("Renamed " + voiceChannel.getName() + " VC to " + name);
         voiceChannel.getManager().setName(name).queue();
     }
 
