@@ -64,9 +64,13 @@ public class Listener extends ListenerAdapter {
                                         case "onlinePlayers" -> new GetOnlinePlayers(e.getMessage());
                                     }
                                 }
+                                case "genshin_impact" -> {
+                                    switch (command) {
+                                        case "uid" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
+                                    }
+                                }
                                 default -> {
                                     switch (command) {
-                                        case "genshin" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
                                         //Unknown Command
                                         default -> e.getMessage().reply("Unknown Command").queue();
                                     }
