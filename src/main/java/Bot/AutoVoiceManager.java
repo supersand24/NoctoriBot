@@ -40,20 +40,22 @@ public class AutoVoiceManager {
     }
 
     public static void updateChannelName(VoiceChannel voiceChannel) {
-        Map<String, Integer> hashMap = getVoiceChannelActivities(voiceChannel);
-        String mostCommonKey = "Vibing";
-        int maxValue = 1;
-        for (Map.Entry<String, Integer> entry : hashMap.entrySet()) {
-            if (entry.getValue() > maxValue) {
-                mostCommonKey = entry.getKey();
-                maxValue = entry.getValue();
+        if (voiceChannel.getParentCategory().getName().equals("Auto Voice (WIP)")) {
+            Map<String, Integer> hashMap = getVoiceChannelActivities(voiceChannel);
+            String mostCommonKey = "Vibing";
+            int maxValue = 1;
+            for (Map.Entry<String, Integer> entry : hashMap.entrySet()) {
+                if (entry.getValue() > maxValue) {
+                    mostCommonKey = entry.getKey();
+                    maxValue = entry.getValue();
+                }
             }
-        }
 
-        if (voiceChannel.getName().equals(mostCommonKey)) {
-            log.debug("Attempted to rename " + voiceChannel.getName() + " VC to " + mostCommonKey);
-        } else {
-            renameChannel(voiceChannel,mostCommonKey);
+            if (voiceChannel.getName().equals(mostCommonKey)) {
+                log.debug("Attempted to rename " + voiceChannel.getName() + " VC to " + mostCommonKey);
+            } else {
+                renameChannel(voiceChannel, mostCommonKey);
+            }
         }
     }
 
