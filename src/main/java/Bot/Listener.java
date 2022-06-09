@@ -87,33 +87,20 @@ public class Listener extends ListenerAdapter {
 
     @Override
     public void onGuildVoiceJoin(@NotNull GuildVoiceJoinEvent e) {
-        AudioChannel audioChannel = e.getChannelJoined();
         Member member = e.getMember();
-        log.info(member.getEffectiveName() + " joined " + audioChannel.getName() + ".");
         Bank.daily(e.getMember());
-        AutoVoiceManager.join(member,audioChannel);
-        AutoVoiceManager.updateChannelName(audioChannel);
+        AutoVoiceManager.join(member,e.getChannelJoined());
     }
 
     @Override
     public void onGuildVoiceLeave(@NotNull GuildVoiceLeaveEvent e) {
-        AudioChannel audioChannel = e.getChannelLeft();
-        Member member = e.getMember();
-        log.info(member.getEffectiveName() + " left " + audioChannel.getName() + ".");
-        AutoVoiceManager.leave(member,audioChannel);
-        AutoVoiceManager.updateChannelName(audioChannel);
+        AutoVoiceManager.leave(e.getMember(),e.getChannelLeft());
     }
 
     @Override
     public void onGuildVoiceMove(@NotNull GuildVoiceMoveEvent e) {
-        AudioChannel joinedChannel = e.getChannelJoined();
-        AudioChannel leftChannel = e.getChannelLeft();
         Member member = e.getMember();
-        log.info(member.getEffectiveName() + " left " + leftChannel.getName() + ".");
-        AutoVoiceManager.leave(member,leftChannel);
-        AutoVoiceManager.updateChannelName(leftChannel);
-        log.info(member.getEffectiveName() + " joined " + joinedChannel.getName() + ".");
-        AutoVoiceManager.join(member,joinedChannel);
-        AutoVoiceManager.updateChannelName(joinedChannel);
+        AutoVoiceManager.leave(member,e.getChannelLeft());
+        AutoVoiceManager.join(member,e.getChannelJoined());
     }
 }

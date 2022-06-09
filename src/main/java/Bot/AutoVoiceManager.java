@@ -14,18 +14,24 @@ public class AutoVoiceManager {
     public static void join(Member member, AudioChannel audioChannel) {
         if (audioChannel.getName().equalsIgnoreCase("New Channel")) {
             newChannel(member, (StageChannel) audioChannel);
+        } else {
+            log.info(member.getEffectiveName() + " joined " + audioChannel.getName() + ".");
+            updateChannelName(audioChannel);
         }
     }
 
     public static void leave(Member member, AudioChannel audioChannel) {
         if (!audioChannel.getName().equals("New Channel")) {
-            if (audioChannel.getType() == ChannelType.VOICE) {
-                VoiceChannel voiceChannel = (VoiceChannel) audioChannel;
-                if (voiceChannel.getParentCategory().getName().equals("Auto Voice (WIP)")) {
-                    if (voiceChannel.getMembers().size() <= 0) {
-                        channels.remove(getAutoVoice(voiceChannel));
-                        voiceChannel.delete().queue();
-                    }
+            VoiceChannel voiceChannel = (VoiceChannel) audioChannel;
+            if (voiceChannel.getParentCategory().getName().equals("Auto Voice (WIP)")) {
+                if (audioChannel.getType() == ChannelType.VOICE) {
+                    updateChannelName(audioChannel);
+                }
+                log.info(member.getEffectiveName() + " left " + audioChannel.getName() + ".");
+                //Delete Channel if no one is left.
+                if (voiceChannel.getMembers().size() <= 0) {
+                    channels.remove(getAutoVoice(voiceChannel));
+                    voiceChannel.delete().queue();
                 }
             }
         }
@@ -33,7 +39,7 @@ public class AutoVoiceManager {
 
     public static void newChannel(Member member, StageChannel stageChannel) {
         stageChannel.getParentCategory().createVoiceChannel("Vibing").setPosition(0).queue(voiceChannel -> {
-            log.info("New Channel Created.");
+            log.info(member.getEffectiveName() + " created a New Voice Channel.");
             channels.add( new AutoVoice(member, voiceChannel) );
             Main.getNoctori().moveVoiceMember(member,voiceChannel).queue();
         });
