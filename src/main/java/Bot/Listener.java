@@ -100,7 +100,9 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onGuildVoiceMove(@NotNull GuildVoiceMoveEvent e) {
         Member member = e.getMember();
-        AutoVoiceManager.leave(member,e.getChannelLeft());
-        AutoVoiceManager.join(member,e.getChannelJoined());
+        AudioChannel channelLeft = e.getChannelLeft();
+        AutoVoiceManager.leave(member,channelLeft);
+        if (!channelLeft.getName().equals("New Channel")) AutoVoiceManager.join(member,e.getChannelJoined());
+
     }
 }
