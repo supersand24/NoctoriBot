@@ -6,9 +6,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class AutoVoiceManager {
+public class VoiceChannelManager {
 
-    private final static Logger log = LoggerFactory.getLogger(AutoVoiceManager.class);
+    private final static Logger log = LoggerFactory.getLogger(VoiceChannelManager.class);
     public final static List<AutoVoice> channels = new ArrayList<>();
 
     public static void join(Member member, AudioChannel audioChannel) {
@@ -24,14 +24,13 @@ public class AutoVoiceManager {
         if (!audioChannel.getName().equals("New Channel")) {
             VoiceChannel voiceChannel = (VoiceChannel) audioChannel;
             if (voiceChannel.getParentCategory().getName().equals("Auto Voice (WIP)")) {
-                if (audioChannel.getType() == ChannelType.VOICE) {
-                    updateChannelName(audioChannel);
-                }
                 log.info(member.getEffectiveName() + " left " + audioChannel.getName() + ".");
                 //Delete Channel if no one is left.
                 if (voiceChannel.getMembers().size() <= 0) {
                     channels.remove(getAutoVoice(voiceChannel));
                     voiceChannel.delete().queue();
+                } else {
+                    if (audioChannel.getType() == ChannelType.VOICE) updateChannelName(audioChannel);
                 }
             }
         }
@@ -81,13 +80,18 @@ public class AutoVoiceManager {
                             switch (activity.getName()) {
                                 case "Fortnite" -> {
                                     if (activity.isRich()) {
-                                        System.out.println(activity.asRichPresence());
-                                        switch (activity.asRichPresence().getDetails().split(" ")[0]) {
-                                            case "Battle" -> hashMap.merge("Fortnite: Battle Royale", 1, Integer::sum);
-                                            case "Save" -> hashMap.merge("Fortnite: Save the World", 1, Integer::sum);
-                                            default -> {
-                                                log.info("Unchecked Fortnite Rich Presence Case : " + activity.asRichPresence().getDetails());
-                                                hashMap.merge(activity.getName(), 1, Integer::sum);
+                                        String details = activity.asRichPresence().getDetails();
+                                        if (details == null) {
+                                            log.error("Fortnite Rich Presence Details are null.");
+                                            hashMap.merge(activity.getName(), 1, Integer::sum);
+                                        } else {
+                                            switch (details.split(" ")[0]) {
+                                                case "Battle" -> hashMap.merge("Fortnite: Battle Royale", 1, Integer::sum);
+                                                case "Save" -> hashMap.merge("Fortnite: Save the World", 1, Integer::sum);
+                                                default -> {
+                                                    log.error("Unchecked Fortnite Rich Presence Case : " + activity.asRichPresence().getDetails());
+                                                    hashMap.merge(activity.getName(), 1, Integer::sum);
+                                                }
                                             }
                                         }
                                     }

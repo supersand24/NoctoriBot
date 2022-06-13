@@ -82,27 +82,27 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onUserUpdateActivities(@NotNull UserUpdateActivitiesEvent e) {
         GuildVoiceState voiceState = e.getMember().getVoiceState();
-        if (voiceState.inAudioChannel()) AutoVoiceManager.updateChannelName(voiceState.getChannel());
+        if (voiceState.inAudioChannel()) VoiceChannelManager.updateChannelName(voiceState.getChannel());
     }
 
     @Override
     public void onGuildVoiceJoin(@NotNull GuildVoiceJoinEvent e) {
         Member member = e.getMember();
         Bank.daily(e.getMember());
-        AutoVoiceManager.join(member,e.getChannelJoined());
+        VoiceChannelManager.join(member,e.getChannelJoined());
     }
 
     @Override
     public void onGuildVoiceLeave(@NotNull GuildVoiceLeaveEvent e) {
-        AutoVoiceManager.leave(e.getMember(),e.getChannelLeft());
+        VoiceChannelManager.leave(e.getMember(),e.getChannelLeft());
     }
 
     @Override
     public void onGuildVoiceMove(@NotNull GuildVoiceMoveEvent e) {
         Member member = e.getMember();
         AudioChannel channelLeft = e.getChannelLeft();
-        AutoVoiceManager.leave(member,channelLeft);
-        if (!channelLeft.getName().equals("New Channel")) AutoVoiceManager.join(member,e.getChannelJoined());
+        VoiceChannelManager.leave(member,channelLeft);
+        if (!channelLeft.getName().equals("New Channel")) VoiceChannelManager.join(member,e.getChannelJoined());
 
     }
 }
