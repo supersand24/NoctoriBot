@@ -1,6 +1,7 @@
 package Bot;
 
 import Command.*;
+import Game.BlackOps3.Manager;
 import Game.Minecraft.GetOnlinePlayers;
 import Game.Minecraft.Username;
 import net.dv8tion.jda.api.entities.AudioChannel;
@@ -38,6 +39,7 @@ public class Listener extends ListenerAdapter {
                 //Commands that can be used anywhere
                 switch (command) {
                     case "balance" -> new Balance(e.getAuthor(),e.getChannel());
+                    case "bo3maps" -> e.getChannel().sendMessage(Manager.getSteamCollectionURL()).queue();
                     //Commands that can not be used anywhere.
                     default -> {
                         //Private Channel only.

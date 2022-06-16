@@ -10,6 +10,8 @@ import java.util.List;
 
 public class Manager {
 
+    private final static int steamCollectionID = 883750219;
+
     private final static Logger log = LoggerFactory.getLogger(Manager.class);
 
     public enum Map {
@@ -158,6 +160,10 @@ public class Manager {
             }
         }
         return Mod.VANILLA;
+    }
+
+    public static String getSteamCollectionURL() {
+        return "https://steamcommunity.com/sharedfiles/filedetails/?id=" + steamCollectionID;
     }
 
 }
