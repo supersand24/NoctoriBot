@@ -4,10 +4,7 @@ import Command.*;
 import Game.BlackOps3.Manager;
 import Game.Minecraft.GetOnlinePlayers;
 import Game.Minecraft.Username;
-import net.dv8tion.jda.api.entities.AudioChannel;
-import net.dv8tion.jda.api.entities.ChannelType;
-import net.dv8tion.jda.api.entities.GuildVoiceState;
-import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
@@ -32,49 +29,60 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
         if (!e.getAuthor().isBot()) {
-            String message = e.getMessage().getContentStripped();
-            if (message.startsWith(COMMAND_SIGN.toLowerCase()) || message.startsWith(COMMAND_SIGN.toUpperCase())) {
-                String[] messageSplit = message.split("\\s+");
-                String command = messageSplit[0].substring(COMMAND_SIGN.length());
-                //Commands that can be used anywhere
-                switch (command) {
-                    case "balance" -> new Balance(e.getAuthor(),e.getChannel());
-                    case "bo3maps" -> e.getChannel().sendMessage(Manager.getSteamCollectionURL()).queue();
-                    //Commands that can not be used anywhere.
-                    default -> {
-                        //Private Channel only.
-                        if (e.isFromType(ChannelType.PRIVATE)) {
-                            log.info("Private Command " + command + " Received!");
-                            switch (command) {
-                                case "notification" -> new Notification(e.getAuthor(),e.getChannel());
-                                //Unknown Command
-                                default -> e.getMessage().reply("Unknown Command").queue();
-                            }
-                        }
-                        //Server Only
-                        else {
-                            Bank.daily(e.getMember());
-                            log.info(command + " Received!");
-                            switch (e.getChannel().getName()) {
-                                case "minecraft" -> {
+            switch (e.getMessage().getType()) {
+                case DEFAULT -> {
+                    String content = e.getMessage().getContentStripped();
+                    if (content.startsWith(COMMAND_SIGN.toLowerCase()) || content.startsWith(COMMAND_SIGN.toUpperCase())) {
+                        String[] messageSplit = content.split("\\s+");
+                        String command = messageSplit[0].substring(COMMAND_SIGN.length());
+                        //Commands that can be used anywhere
+                        switch (command) {
+                            case "balance" -> new Balance(e.getAuthor(),e.getChannel());
+                            case "bo3maps" -> e.getChannel().sendMessage(Manager.getSteamCollectionURL()).queue();
+                            //Commands that can not be used anywhere.
+                            default -> {
+                                //Private Channel only.
+                                if (e.isFromType(ChannelType.PRIVATE)) {
+                                    log.info("Private Command " + command + " Received!");
                                     switch (command) {
-                                        case "username" -> new Username(e.getMember(), e.getMessage(), messageSplit);
-                                        case "onlinePlayers" -> new GetOnlinePlayers(e.getMessage());
-                                    }
-                                }
-                                case "genshin_impact" -> {
-                                    switch (command) {
-                                        case "uid" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
-                                    }
-                                }
-                                default -> {
-                                    switch (command) {
+                                        case "notification" -> new Notification(e.getAuthor(),e.getChannel());
                                         //Unknown Command
                                         default -> e.getMessage().reply("Unknown Command").queue();
                                     }
                                 }
+                                //Server Only
+                                else {
+                                    Bank.daily(e.getMember());
+                                    log.info(command + " Received!");
+                                    switch (e.getChannel().getName()) {
+                                        case "minecraft" -> {
+                                            switch (command) {
+                                                case "username" -> new Username(e.getMember(), e.getMessage(), messageSplit);
+                                                case "onlinePlayers" -> new GetOnlinePlayers(e.getMessage());
+                                            }
+                                        }
+                                        case "genshin_impact" -> {
+                                            switch (command) {
+                                                case "uid" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
+                                            }
+                                        }
+                                        default -> {
+                                            switch (command) {
+                                                //Unknown Command
+                                                default -> e.getMessage().reply("Unknown Command").queue();
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
+                    }
+                }
+                case INLINE_REPLY -> {
+                    try {
+                        //Temporary
+                    } catch (NumberFormatException ex) {
+                        ex.printStackTrace();
                     }
                 }
             }
