@@ -28,6 +28,7 @@ public class Manager {
         DIE_RISE_SLIQUIFIER_FLOOR(  "dieRiseSliquifierFloor",   "Die Rise (Sliquifier Floor)",  true),
         DIE_RISE_ROOF(              "dieRiseRoof",              "Die Rise (Roof)",              true),
         BURIED_CHALLENGE(           "buriedChallenge",          "Buried Challenge",             true),
+        ASTORIA(                    "astoria",                  "Astoria",                      true),
         ORIGINS(                    "origins",                  "Origins",                      false),
         SHADOWS_OF_EVIL(            "shadowsOfEvil",            "Shadows of Evil",              false),
         DER_EISENDRACHE(            "derEisendrache",           "Der Eisendrache",              false),
@@ -44,7 +45,10 @@ public class Manager {
         VOID_EXPANSE(               "voidExpanse",              "Void Expanse",                 true),
         DOME_NUKETOWN_REIMAGINED(   "domeNuketownReimagined",   "Dome (Nuketown Reimagineed)",  true),
         DER_FUHRERBUNKER(           "derFuhrerbunker",          "Der Führerbunker",             true),
-        SHUGEKI(                    "shugeki",                  "Shugeki",                      true);
+        SHUGEKI(                    "shugeki",                  "Shugeki",                      true),
+        DEAD_HIGH(                  "deadHigh",                 "Dead High",                    true),
+        SLOG(                       "slog",                     "Slog",                         true),
+        GATEKEEPER(                 "gatekeeper",               "Gatekeeper",                   true);
 
         private final String fileName;
         private final String mapName;
@@ -72,8 +76,8 @@ public class Manager {
 
     public enum Mod {
         VANILLA(0, "Vanilla"),
-        ZE_LITE(1, "Zombies Experience: Complete Edition"),
-        ZE_COMPLETE(2, "Zombies Experience: Lite Edition"),
+        ZE_LITE(1, "Zombies Experience: Lite Edition"),
+        ZE_COMPLETE(2, "Zombies Experience: Complete Edition"),
         ALL_AROUND_ENHANCEMENT(3, "All-around Enhancement");
 
         private final int index;
