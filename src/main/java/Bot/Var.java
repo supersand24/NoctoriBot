@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class Var {
 
@@ -31,6 +32,7 @@ public class Var {
     private final static int VAR_GAME_KEYS = 7;
     private final static int VAR_GENSHIN_UID = 8;
     private final static int VAR_MINECRAFT_USERNAME = 9;
+    private final static int VAR_PROFILE_FIELDS = 10;
 
     public static int getMoney(User user) {
         try {
@@ -335,7 +337,34 @@ public class Var {
         }
     }
 
-    private static ArrayList<String> parseStringArray(String array) {
+    public static List<Integer> getProfileFields(User user) {
+        try {
+            List<Integer> profileFields = parseIntegerArray(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_PROFILE_FIELDS));
+            log.debug("Read " + user.getName() + " has this profile field set " + profileFields);
+            return profileFields;
+        } catch (NoSuchFileException e) {
+            log.error(user.getId() + ".var file not found!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<>();
+    }
+
+    public static void setProfileFields(User user, List<Integer> profileFields) {
+        try {
+            Path filePath = Paths.get("variables/" + user.getId() + ".var");
+            List<String> content = Files.readAllLines(filePath);
+            content.set(VAR_PROFILE_FIELDS, profileFields.toString());
+            log.debug("Set " + user.getName() + " Profile Fields to " + profileFields + ".");
+            Files.write(filePath, content, StandardCharsets.UTF_8);
+        } catch (NoSuchFileException e) {
+            log.error(user.getId() + ".var file not found!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static List<String> parseStringArray(String array) {
         String[] strings;
         if (array.substring(1, array.length() - 1).isEmpty()) {
             strings = new String[0];
@@ -343,6 +372,10 @@ public class Var {
             strings = array.substring(1, array.length() - 1).split(", ");
         }
         return new ArrayList<>(Arrays.asList(strings));
+    }
+
+    private static List<Integer> parseIntegerArray(String array) {
+        return parseStringArray(array).stream().map(Integer::parseInt).collect(Collectors.toList());
     }
 
     private static void insertVariableForAll(int insertIndex, String defaultVar, boolean save) {
@@ -354,7 +387,7 @@ public class Var {
                 if (save) {
                     Files.write(filePath, content, StandardCharsets.UTF_8);
                 } else {
-                    System.out.println(content);
+                    System.out.println(member.getId() + " => " + content);
                 }
             } catch (NoSuchFileException e) {
                 log.error(member.getId() + ".var file not found!");

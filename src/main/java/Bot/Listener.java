@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.react.GenericMessageReactionEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateActivitiesEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -38,38 +39,55 @@ public class Listener extends ListenerAdapter {
                         //Commands that can be used anywhere
                         switch (command) {
                             case "balance" -> new Balance(e.getAuthor(),e.getChannel());
+                            case "profile" -> new Profile(e.getMember(),e.getChannel());
+                            case "setprofile" -> new SetProfile(e.getMessage());
+                            case "profilehelp" -> new ProfileHelp(e.getMessage());
                             case "bo3maps" -> e.getChannel().sendMessage(Manager.getSteamCollectionURL()).queue();
-                            //Commands that can not be used anywhere.
                             default -> {
-                                //Private Channel only.
-                                if (e.isFromType(ChannelType.PRIVATE)) {
-                                    log.info("Private Command " + command + " Received!");
-                                    switch (command) {
-                                        case "notification" -> new Notification(e.getAuthor(),e.getChannel());
-                                        //Unknown Command
-                                        default -> e.getMessage().reply("Unknown Command").queue();
+                                switch (e.getChannelType()) {
+                                    case PRIVATE -> {
+                                        log.info("Private Command " + command + " Received!");
+                                        switch (command) {
+                                            case "notification" -> new Notification(e.getAuthor(),e.getChannel());
+                                            //Unknown Command
+                                            default -> e.getMessage().reply("Unknown Command").queue();
+                                        }
                                     }
-                                }
-                                //Server Only
-                                else {
-                                    Bank.daily(e.getMember());
-                                    log.info(command + " Received!");
-                                    switch (e.getChannel().getName()) {
-                                        case "minecraft" -> {
-                                            switch (command) {
-                                                case "username" -> new Username(e.getMember(), e.getMessage(), messageSplit);
-                                                case "onlinePlayers" -> new GetOnlinePlayers(e.getMessage());
+                                    case GUILD_PUBLIC_THREAD, GUILD_PRIVATE_THREAD -> {
+                                        log.info(command + " Received!");
+                                        switch (e.getChannel().getName()) {
+                                            case "Table" -> {
+                                                switch (command) {
+                                                    case "coinflip", "cf" -> Casino.newGame(e.getThreadChannel(),e.getMember());
+                                                }
                                             }
                                         }
-                                        case "genshin_impact" -> {
-                                            switch (command) {
-                                                case "uid" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
+                                    }
+                                    case TEXT -> {
+                                        Bank.daily(e.getMember());
+                                        log.info(command + " Received!");
+                                        switch (e.getChannel().getName()) {
+                                            case "minecraft" -> {
+                                                switch (command) {
+                                                    case "username" -> new Username(e.getMember(), e.getMessage(), messageSplit);
+                                                    case "onlinePlayers" -> new GetOnlinePlayers(e.getMessage());
+                                                }
                                             }
-                                        }
-                                        default -> {
-                                            switch (command) {
-                                                //Unknown Command
-                                                default -> e.getMessage().reply("Unknown Command").queue();
+                                            case "genshin_impact" -> {
+                                                switch (command) {
+                                                    case "uid" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
+                                                }
+                                            }
+                                            case "casino-alpha", "bot_testing" -> {
+                                                switch (command) {
+                                                    case "table" -> Casino.newTable(e.getMessage());
+                                                }
+                                            }
+                                            default -> {
+                                                switch (command) {
+                                                    //Unknown Command
+                                                    default -> e.getMessage().reply("Unknown Command").queue();
+                                                }
                                             }
                                         }
                                     }
@@ -79,11 +97,23 @@ public class Listener extends ListenerAdapter {
                     }
                 }
                 case INLINE_REPLY -> {
-                    try {
-                        //Temporary
-                    } catch (NumberFormatException ex) {
-                        ex.printStackTrace();
+                    switch (e.getChannel().getName()) {
+                        case "Table" -> {
+                            Casino.addBet(e.getMessage());
+                        }
                     }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onGenericMessageReaction(@NotNull GenericMessageReactionEvent e) {
+        if (!e.getUser().isBot()) {
+            if ("Table".equals(e.getChannel().getName())) {
+                switch (e.getReactionEmote().getEmoji()) {
+                    case "\uD83C\uDDED" -> Casino.addBet(e.getMember(),e.getThreadChannel());
+                    case "\uD83C\uDDF9" -> Casino.addBet(e.getMember(),e.getThreadChannel());
                 }
             }
         }
