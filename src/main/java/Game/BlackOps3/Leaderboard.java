@@ -2,9 +2,12 @@ package Game.BlackOps3;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.User;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Leaderboard {
 
@@ -42,5 +45,33 @@ public class Leaderboard {
             }
         }
         return embed.build();
+    }
+
+    public int getUserPosition(User user) {
+        Record highestRecord = userHasRecord(user);
+        if (highestRecord != null) {
+            int recordsAboveHighest = 1;
+            for (Record record : getRecords()) {
+                if (record.endRound > highestRecord.endRound) {
+                    if (Arrays.stream(record.players).map(Player::getMemberId).toList().contains(user.getIdLong())) {
+                        highestRecord = record;
+                        recordsAboveHighest = 1;
+                    } else {
+                        recordsAboveHighest++;
+                    }
+                }
+            }
+            return recordsAboveHighest;
+        }
+        return -1;
+    }
+
+    public Record userHasRecord(User user) {
+        for (Record record : getRecords()) {
+            if (Arrays.stream(record.getPlayers()).map(Player::getMemberId).toList().contains(user.getIdLong())) {
+                return record;
+            }
+        }
+        return null;
     }
 }

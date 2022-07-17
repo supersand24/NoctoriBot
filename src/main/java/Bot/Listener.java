@@ -67,6 +67,11 @@ public class Listener extends ListenerAdapter {
                                         Bank.daily(e.getMember());
                                         log.info(command + " Received!");
                                         switch (e.getChannel().getName()) {
+                                            case "bot_spam" -> {
+                                                switch (command) {
+                                                    case "bo3" -> Manager.sendMapLeaderboard(e.getMessage());
+                                                }
+                                            }
                                             case "minecraft" -> {
                                                 switch (command) {
                                                     case "username" -> new Username(e.getMember(), e.getMessage(), messageSplit);
@@ -78,7 +83,7 @@ public class Listener extends ListenerAdapter {
                                                     case "uid" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
                                                 }
                                             }
-                                            case "casino-alpha", "bot_testing" -> {
+                                            case "casino-alpha" -> {
                                                 switch (command) {
                                                     case "table" -> Casino.newTable(e.getMessage());
                                                 }
