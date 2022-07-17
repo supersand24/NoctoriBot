@@ -39,9 +39,9 @@ public class Listener extends ListenerAdapter {
                         //Commands that can be used anywhere
                         switch (command) {
                             case "balance" -> new Balance(e.getAuthor(),e.getChannel());
-                            case "profile" -> new Profile(e.getMember(),e.getChannel());
-                            case "setprofile" -> new SetProfile(e.getMessage());
-                            case "profilehelp" -> new ProfileHelp(e.getMessage());
+                            case "profile" -> Profile.sendProfile(e.getAuthor(),e.getChannel());
+                            case "setprofile" -> Profile.set(e.getMessage());
+                            case "profilehelp" -> Profile.help(e.getMessage());
                             case "bo3maps" -> e.getChannel().sendMessage(Manager.getSteamCollectionURL()).queue();
                             default -> {
                                 switch (e.getChannelType()) {
