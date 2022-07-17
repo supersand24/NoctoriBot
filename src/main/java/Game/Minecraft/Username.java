@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 
+import java.io.IOException;
 import java.util.List;
 
 public class Username {
@@ -21,11 +22,11 @@ public class Username {
                     message.reply(user.getName() + " Minecraft Username is `" + username + "`").mentionRepliedUser(false).queue();
                 }
             } else {
-                String uuid = ServerAPI.getUUID(arguments[1]);
-                if (uuid != null) {
+                try {
+                    String uuid = ServerAPI.getUUID(arguments[1]);
                     Var.setMinecraftUsername(member.getUser(), uuid);
                     message.reply("Set `" + arguments[1] + "` to be your Minecraft Username.").mentionRepliedUser(false).queue();
-                } else {
+                } catch (IllegalArgumentException e) {
                     message.reply("Could not find a Minecraft Account under that Username!").mentionRepliedUser(false).queue();
                 }
             }

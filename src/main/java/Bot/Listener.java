@@ -64,6 +64,7 @@ public class Listener extends ListenerAdapter {
                                 default -> {
                                     switch (command) {
                                         case "genshin" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
+                                        case "username" -> new Username(e.getMember(), e.getMessage(), messageSplit);
                                         //Unknown Command
                                         default -> e.getMessage().reply("Unknown Command").queue();
                                     }

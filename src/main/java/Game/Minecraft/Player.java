@@ -25,4 +25,16 @@ public class Player {
     public String getUsername() {
         return username;
     }
+
+    @Override
+    public String toString() {
+        return "Player{" +
+                "uuid='" + uuid + '\'' +
+                ", username='" + username + '\'' +
+                ", x=" + x +
+                ", y=" + y +
+                ", z=" + z +
+                ", dimension='" + dimension + '\'' +
+                '}';
+    }
 }

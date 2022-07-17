@@ -1,5 +1,7 @@
 package Bot;
 
+import Game.Minecraft.Player;
+import Game.Minecraft.ServerAPI;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -40,6 +42,13 @@ public class Main {
         try {
             jda = builder.build();
             jda.awaitReady();
+
+
+
+            for (Player player : ServerAPI.getOnlinePlayers()) {
+                System.out.println(player);
+            }
+
         } catch (LoginException | InterruptedException e) {
             e.printStackTrace();
         }
