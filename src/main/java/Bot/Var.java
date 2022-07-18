@@ -261,7 +261,7 @@ public class Var {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return null;
+        return new ArrayList<>();
     }
 
     public static void addGameKey(User user, String game) {

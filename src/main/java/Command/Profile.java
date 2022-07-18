@@ -29,10 +29,12 @@ public class Profile {
             if (!user.getName().equals(member.getEffectiveName())) embed.setDescription(user.getAsTag());
 
             //Server Booster
-            if (member.isBoosting()) embed.setAuthor("SERVER BOOSTER!",
-                    "https://support.discord.com/hc/en-us/articles/360039337992-Server-Boosting-Buy-a-Level",
-                    "https://c.tenor.com/fgHKt1DNMdIAAAAi/nitro-discord.gif"
-            );
+            if (member.isBoosting()) {
+                embed.setAuthor("SERVER BOOSTER!",
+                        "https://support.discord.com/hc/en-us/articles/360039337992-Server-Boosting-Buy-a-Level",
+                        "https://c.tenor.com/fgHKt1DNMdIAAAAi/nitro-discord.gif"
+                );
+            }
 
             //Date Joined Timestamp
             LocalDate dateJoined = member.getTimeJoined().toLocalDate();
@@ -56,20 +58,29 @@ public class Profile {
 
     public static MessageEmbed.Field makeField(Member member, int field) {
         LocalDate dateJoined = member.getTimeJoined().toLocalDate();
+        LocalDate dateBoosted = null;
+        if (member.isBoosting()) {
+            dateBoosted = member.getTimeBoosted().toLocalDate();
+        }
         switch (field) {
-            case 0 -> {
-                return new MessageEmbed.Field("Days in Noctori", String.valueOf(ChronoUnit.DAYS.between(dateJoined, LocalDate.now())), true);
-            }
-            case 1 -> {
-                return new MessageEmbed.Field("Weeks in Noctori", String.valueOf(ChronoUnit.WEEKS.between(dateJoined, LocalDate.now())), true);
-            }
-            case 2 -> {
-                return new MessageEmbed.Field("Months in Noctori", String.valueOf(ChronoUnit.MONTHS.between(dateJoined, LocalDate.now())), true);
-            }
-            case 3 -> {
-                return new MessageEmbed.Field("Years in Noctori", String.valueOf(ChronoUnit.YEARS.between(dateJoined, LocalDate.now())), true);
-            }
+            case 0 -> {return new MessageEmbed.Field("Days in Noctori", String.valueOf(ChronoUnit.DAYS.between(dateJoined, LocalDate.now())), true);}
+            case 1 -> {return new MessageEmbed.Field("Weeks in Noctori", String.valueOf(ChronoUnit.WEEKS.between(dateJoined, LocalDate.now())), true);}
+            case 2 -> {return new MessageEmbed.Field("Months in Noctori", String.valueOf(ChronoUnit.MONTHS.between(dateJoined, LocalDate.now())), true);}
+            case 3 -> {return new MessageEmbed.Field("Years in Noctori", String.valueOf(ChronoUnit.YEARS.between(dateJoined, LocalDate.now())), true);}
+            case 8 -> {return new MessageEmbed.Field("Dailies Claimed", String.valueOf(Var.getDailiesClaimed(member.getUser())), true);}
+            case 9 -> {return new MessageEmbed.Field("Games Claimed", String.valueOf(Var.getGameKeys(member.getUser()).size()), true);}
+            case 10 -> {return new MessageEmbed.Field("Money", "$" + Var.getMoney(member.getUser()), true);}
+            case 200 -> {return new MessageEmbed.Field("Minecraft Username", String.valueOf(Var.getMinecraftUsername(member.getUser())), true);}
+            case 201 -> {return new MessageEmbed.Field("Genshin UID", String.valueOf(Var.getGenshinUid(member.getUser())), true);}
             default -> {
+                if (dateBoosted != null) {
+                    switch (field) {
+                        case 4 -> {return new MessageEmbed.Field("Days Boosted Noctori", String.valueOf(ChronoUnit.DAYS.between(dateBoosted, LocalDate.now())), true);}
+                        case 5 -> {return new MessageEmbed.Field("Weeks Boosted Noctori", String.valueOf(ChronoUnit.WEEKS.between(dateBoosted, LocalDate.now())), true);}
+                        case 6 -> {return new MessageEmbed.Field("Months Boosted Noctori", String.valueOf(ChronoUnit.MONTHS.between(dateBoosted, LocalDate.now())), true);}
+                        case 7 -> {return new MessageEmbed.Field("Years Boosted Noctori", String.valueOf(ChronoUnit.YEARS.between(dateBoosted, LocalDate.now())), true);}
+                    }
+                }
                 if (field >= 100 && field < 200) {
                     for (Manager.Map map : Manager.Map.values()) {
                         if (field == map.getId() + 100) {
@@ -91,12 +102,24 @@ public class Profile {
                 weeks
                 months
                 years
+                nitro:days
+                nitro:weeks
+                nitro:months
+                nitro:years
+                dailiesClaimed
+                gamesClaimed
+                money
+                gameid:minecraft
+                gameid:genshin
                 bo3z:<MAPNAME>
                 """, true);
         embed.addField("Examples", """
                 `n!setprofile days`
                 `n!setprofile months,days`
                 `n!setprofile years,weeks,months`
+                `n!setprofile weeks,nitro:weeks,money`
+                `n!setprofile nitro:days,dailiesClaimed`
+                `n!setprofile nitro:months,user:minecraft,user:genshin`
                 `n!setprofile weeks,bo3z:nachtDerUntoten`
                 `n!setprofile bo3z:kinoDerToten,bo3z:origins`
                 """,true);
@@ -120,6 +143,15 @@ public class Profile {
                     case "weeks" -> profileFields.add(1);
                     case "months" -> profileFields.add(2);
                     case "years" -> profileFields.add(3);
+                    case "nitro:days" -> profileFields.add(4);
+                    case "nitro:weeks" -> profileFields.add(5);
+                    case "nitro:months" -> profileFields.add(6);
+                    case "nitro:years" -> profileFields.add(7);
+                    case "dailiesClaimed" -> profileFields.add(8);
+                    case "gamesClaimed" -> profileFields.add(9);
+                    case "money" -> profileFields.add(10);
+                    case "user:minecraft" -> profileFields.add(200);
+                    case "user:genshin" -> profileFields.add(201);
                 }
             }
             Var.setProfileFields(message.getAuthor(), profileFields);
