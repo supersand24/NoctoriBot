@@ -64,7 +64,7 @@ public class Listener extends ListenerAdapter {
                                         switch (e.getChannel().getName()) {
                                             case "Table" -> {
                                                 switch (command) {
-                                                    case "coinflip", "cf" -> Casino.newGame(e.getThreadChannel(),e.getMember());
+                                                    //case "coinflip", "cf" -> Casino.newGame(e.getThreadChannel(),e.getMember());
                                                 }
                                             }
                                         }
@@ -91,7 +91,7 @@ public class Listener extends ListenerAdapter {
                                             }
                                             case "casino-alpha" -> {
                                                 switch (command) {
-                                                    case "table" -> Casino.newTable(e.getMessage());
+                                                    //case "table" -> Casino.newTable(e.getMessage());
                                                 }
                                             }
                                             default -> {
@@ -110,7 +110,7 @@ public class Listener extends ListenerAdapter {
                 case INLINE_REPLY -> {
                     switch (e.getChannel().getName()) {
                         case "Table" -> {
-                            Casino.addBet(e.getMessage());
+                            //Casino.addBet(e.getMessage());
                         }
                     }
                 }
@@ -123,8 +123,8 @@ public class Listener extends ListenerAdapter {
         if (!e.getUser().isBot()) {
             if ("Table".equals(e.getChannel().getName())) {
                 switch (e.getReactionEmote().getEmoji()) {
-                    case "\uD83C\uDDED" -> Casino.addBet(e.getMember(),e.getThreadChannel());
-                    case "\uD83C\uDDF9" -> Casino.addBet(e.getMember(),e.getThreadChannel());
+                    //case "\uD83C\uDDED" -> Casino.addBet(e.getMember(),e.getThreadChannel());
+                    //case "\uD83C\uDDF9" -> Casino.addBet(e.getMember(),e.getThreadChannel());
                 }
             }
         }
