@@ -21,19 +21,21 @@ public class Profile {
             //Create the Builder
             EmbedBuilder embed = new EmbedBuilder();
 
-            //Place Avatar Picture
-            embed.setThumbnail(member.getAvatarUrl());
-
             //Insert Name
             embed.setTitle(member.getEffectiveName());
             if (!user.getName().equals(member.getEffectiveName())) embed.setDescription(user.getAsTag());
 
             //Server Booster
             if (member.isBoosting()) {
+                //Place Avatar Picture
+                embed.setThumbnail(member.getAvatarUrl());
                 embed.setAuthor("SERVER BOOSTER!",
                         "https://support.discord.com/hc/en-us/articles/360039337992-Server-Boosting-Buy-a-Level",
                         "https://c.tenor.com/fgHKt1DNMdIAAAAi/nitro-discord.gif"
                 );
+            } else {
+                //Place Avatar Picture
+                embed.setThumbnail(member.getUser().getAvatarUrl());
             }
 
             //Date Joined Timestamp
