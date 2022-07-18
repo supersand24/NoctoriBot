@@ -33,8 +33,10 @@ public class Main {
                 GatewayIntent.GUILD_VOICE_STATES,
                 GatewayIntent.DIRECT_MESSAGES,
                 GatewayIntent.DIRECT_MESSAGE_REACTIONS
-        ).setMemberCachePolicy(MemberCachePolicy.ALL)
-                .disableCache(CacheFlag.EMOTE);
+        ).setMemberCachePolicy(MemberCachePolicy.ALL).disableCache(
+                        CacheFlag.STICKER,
+                        CacheFlag.EMOJI
+                );
 
         builder.addEventListeners( new Listener() );
 

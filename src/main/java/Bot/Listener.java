@@ -40,8 +40,8 @@ public class Listener extends ListenerAdapter {
                         switch (command) {
                             case "balance" -> new Balance(e.getAuthor(),e.getChannel());
                             case "profile" -> {
-                                if (e.getMessage().getMentionedUsers().size() > 0) {
-                                    Profile.sendProfile(e.getMessage().getMentionedUsers().get(0),e.getChannel());
+                                if (e.getMessage().getMentions().getUsers().size() > 0) {
+                                    Profile.sendProfile(e.getMessage().getMentions().getUsers().get(0),e.getChannel());
                                 } else {
                                     Profile.sendProfile(e.getAuthor(),e.getChannel());
                                 }
@@ -113,18 +113,6 @@ public class Listener extends ListenerAdapter {
                             //Casino.addBet(e.getMessage());
                         }
                     }
-                }
-            }
-        }
-    }
-
-    @Override
-    public void onGenericMessageReaction(@NotNull GenericMessageReactionEvent e) {
-        if (!e.getUser().isBot()) {
-            if ("Table".equals(e.getChannel().getName())) {
-                switch (e.getReactionEmote().getEmoji()) {
-                    //case "\uD83C\uDDED" -> Casino.addBet(e.getMember(),e.getThreadChannel());
-                    //case "\uD83C\uDDF9" -> Casino.addBet(e.getMember(),e.getThreadChannel());
                 }
             }
         }

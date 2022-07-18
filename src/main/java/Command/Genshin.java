@@ -11,7 +11,7 @@ public class Genshin {
 
     public Genshin(Member member, Message message, String[] arguments) {
         if (arguments.length > 1) {
-            List<User> mentionedUsers = message.getMentionedUsers();
+            List<User> mentionedUsers = message.getMentions().getUsers();
             if (mentionedUsers.size() > 0) {
                 User user = mentionedUsers.get(0);
                 long uid = Var.getGenshinUid(user);
