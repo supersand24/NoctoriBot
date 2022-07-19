@@ -3,6 +3,7 @@ package Bot;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,16 +143,33 @@ public class VoiceChannelManager {
         audioChannel.getManager().setName(name).queue();
     }
 
-    public static void addChannelAdmin(Member member, AudioChannel audioChannel) {
-        AutoVoice voiceChannel = getAutoVoice(audioChannel);
-        voiceChannel.addPermissionsForAdmin(member);
+    public static void addChannelAdmin(Member member, Message message) {
+        if (!member.getUser().isBot() && !member.getUser().isSystem()) {
+            AutoVoice voiceChannel = getAutoVoice(message.getChannel().asVoiceChannel());
+            if (voiceChannel != null) {
+                if (!voiceChannel.getChannelAdmins().contains(member)) {
+                    message.reply("`" + member.getEffectiveName() + "` was made a Channel Admin.").queue();
+                    voiceChannel.addPermissionsForAdmin(member);
+                } else {
+                    message.reply("`" + member.getEffectiveName() + "` is already a Channel Admin.").queue();
+                }
+            }
+        }
     }
 
-    public static void removeChannelAdmin(Member member, AudioChannel audioChannel) {
-        AutoVoice voiceChannel = getAutoVoice(audioChannel);
-        voiceChannel.removePermissionsForAdmin(member);
+    public static void removeChannelAdmin(Member member, Message message) {
+        if (!member.getUser().isBot() && !member.getUser().isSystem()) {
+            AutoVoice voiceChannel = getAutoVoice(message.getChannel().asVoiceChannel());
+            if (voiceChannel != null) {
+                if (voiceChannel.getChannelAdmins().contains(member)) {
+                    message.reply("`" + member.getEffectiveName() + "` was removed as a Channel Admin.").queue();
+                    voiceChannel.removePermissionsForAdmin(member);
+                } else {
+                    message.reply("`" + member.getEffectiveName() + "` is not a Channel Admin.").queue();
+                }
+            }
+        }
     }
-
 
     private static AutoVoice getAutoVoice(AudioChannel audioChannel) {
         for (AutoVoice av : channels) {
@@ -169,6 +187,12 @@ public class VoiceChannelManager {
             }
         }
         return null;
+    }
+
+    public static List<Member> getChannelAdmins(VoiceChannel voiceChannel) {
+        AutoVoice av = getAutoVoice(voiceChannel);
+        if (av == null) return new ArrayList<>();
+        return av.getChannelAdmins();
     }
 
 }
@@ -217,5 +241,9 @@ class AutoVoice {
 
     public List<Member> getChannelMembers() {
         return voiceChannel.getMembers();
+    }
+
+    public void sendMessage(String string) {
+        getVoiceChannel().sendMessage(string).queue();
     }
 }

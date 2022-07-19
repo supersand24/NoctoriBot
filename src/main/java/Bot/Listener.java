@@ -106,6 +106,21 @@ public class Listener extends ListenerAdapter {
                                         log.info("Voice Command " + command + " Received!");
                                         switch (command) {
                                             //Unknown Command
+                                            case "addAdmin" -> {
+                                                if (e.getMessage().getMentions().getMembers().size() >= 1) {
+                                                    VoiceChannelManager.addChannelAdmin(e.getMessage().getMentions().getMembers().get(0), e.getMessage());
+                                                } else {
+                                                    e.getMessage().reply("No one mentioned").mentionRepliedUser(false).queue();
+                                                }
+                                            }
+                                            case "removeAdmin" -> {
+                                                if (e.getMessage().getMentions().getMembers().size() >= 1) {
+                                                    VoiceChannelManager.removeChannelAdmin(e.getMessage().getMentions().getMembers().get(0),e.getMessage());
+                                                } else {
+                                                    e.getMessage().reply("No one mentioned").mentionRepliedUser(false).queue();
+                                                }
+                                            }
+                                            case "channelAdmins" -> e.getMessage().reply(VoiceChannelManager.getChannelAdmins(e.getChannel().asVoiceChannel()).stream().map(Member::getEffectiveName).toList().toString()).queue();
                                             default -> e.getMessage().reply("Unknown Command").queue();
                                         }
                                     }
