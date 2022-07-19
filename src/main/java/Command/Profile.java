@@ -77,10 +77,10 @@ public class Profile {
             default -> {
                 if (dateBoosted != null) {
                     switch (field) {
-                        case 4 -> {return new MessageEmbed.Field("Days Boosted Noctori", String.valueOf(ChronoUnit.DAYS.between(dateBoosted, LocalDate.now())), true);}
-                        case 5 -> {return new MessageEmbed.Field("Weeks Boosted Noctori", String.valueOf(ChronoUnit.WEEKS.between(dateBoosted, LocalDate.now())), true);}
-                        case 6 -> {return new MessageEmbed.Field("Months Boosted Noctori", String.valueOf(ChronoUnit.MONTHS.between(dateBoosted, LocalDate.now())), true);}
-                        case 7 -> {return new MessageEmbed.Field("Years Boosted Noctori", String.valueOf(ChronoUnit.YEARS.between(dateBoosted, LocalDate.now())), true);}
+                        case 4 -> {return new MessageEmbed.Field("Days Boosting Noctori", String.valueOf(ChronoUnit.DAYS.between(dateBoosted, LocalDate.now())), true);}
+                        case 5 -> {return new MessageEmbed.Field("Weeks Boosting Noctori", String.valueOf(ChronoUnit.WEEKS.between(dateBoosted, LocalDate.now())), true);}
+                        case 6 -> {return new MessageEmbed.Field("Months Boosting Noctori", String.valueOf(ChronoUnit.MONTHS.between(dateBoosted, LocalDate.now())), true);}
+                        case 7 -> {return new MessageEmbed.Field("Years Boosting Noctori", String.valueOf(ChronoUnit.YEARS.between(dateBoosted, LocalDate.now())), true);}
                     }
                 }
                 if (field >= 100 && field < 200) {

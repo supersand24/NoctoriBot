@@ -102,6 +102,13 @@ public class Listener extends ListenerAdapter {
                                             }
                                         }
                                     }
+                                    case VOICE -> {
+                                        log.info("Voice Command " + command + " Received!");
+                                        switch (command) {
+                                            //Unknown Command
+                                            default -> e.getMessage().reply("Unknown Command").queue();
+                                        }
+                                    }
                                 }
                             }
                         }

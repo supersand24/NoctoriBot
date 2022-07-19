@@ -4,6 +4,7 @@ import Game.BlackOps3.Manager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
@@ -26,6 +27,7 @@ public class Main {
 
         JDABuilder builder = JDABuilder.create(
                 getToken(),
+                GatewayIntent.MESSAGE_CONTENT,
                 GatewayIntent.GUILD_MEMBERS,
                 GatewayIntent.GUILD_PRESENCES,
                 GatewayIntent.GUILD_MESSAGES,
@@ -43,6 +45,7 @@ public class Main {
         try {
             jda = builder.build();
             jda.awaitReady();
+            VoiceChannelManager.initialize();
         } catch (LoginException | InterruptedException e) {
             e.printStackTrace();
         }
