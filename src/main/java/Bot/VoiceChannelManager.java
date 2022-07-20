@@ -2,8 +2,7 @@ package Bot;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.requests.restaction.MessageAction;
+import net.dv8tion.jda.api.requests.restaction.PermissionOverrideAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,10 +10,23 @@ import java.util.*;
 
 public class VoiceChannelManager {
 
-    private final static Logger log = LoggerFactory.getLogger(VoiceChannelManager.class);
+    protected final static Logger log = LoggerFactory.getLogger(VoiceChannelManager.class);
     public final static List<AutoVoice> channels = new ArrayList<>();
 
     private final static long CATEGORY_NAME = 964543894832427018L;
+
+    public final static EnumSet<Permission> a = EnumSet.of(Permission.MANAGE_CHANNEL);
+
+    protected final static EnumSet<Permission> adminAllowedPermissions = EnumSet.of(
+            Permission.MANAGE_CHANNEL,      Permission.CREATE_INSTANT_INVITE,
+            Permission.VOICE_DEAF_OTHERS,   Permission.VOICE_MUTE_OTHERS,
+            Permission.PRIORITY_SPEAKER
+    );
+
+    protected final static EnumSet<Permission> memberAllowedPermissions = EnumSet.of(
+            Permission.VIEW_CHANNEL,        Permission.VOICE_SPEAK,
+            Permission.MESSAGE_TTS
+    );
 
     public static void initialize() {
         log.info("Auto Voice Manager Setting Up...");
@@ -40,8 +52,12 @@ public class VoiceChannelManager {
             newChannel(member, (StageChannel) audioChannel);
         } else {
             log.info(member.getEffectiveName() + " joined " + audioChannel.getName() + ".");
-            Main.getNoctori().getVoiceChannelById(audioChannel.getId()).sendMessage("`" + member.getEffectiveName() + "` joined the call.").tts(true).queue();
-            updateChannelName(audioChannel);
+            AutoVoice av = getAutoVoice(audioChannel);
+            if (av != null) {
+                av.getVoiceChannel().sendMessage("`" + member.getEffectiveName() + "` joined the call.").tts(true).queue();
+                av.getVoiceChannel().upsertPermissionOverride(member).grant(memberAllowedPermissions).queue();
+                updateChannelName(audioChannel);
+            }
         }
     }
 
@@ -57,6 +73,9 @@ public class VoiceChannelManager {
                 } else {
                     if (audioChannel.getType() == ChannelType.VOICE) {
                         Main.getNoctori().getVoiceChannelById(audioChannel.getId()).sendMessage("`" + member.getEffectiveName() + "` left the call.").tts(true).queue();
+                        getAutoVoice(audioChannel).getVoiceChannel().getPermissionOverride(member).getManager().reset().queue();
+                        //getAutoVoice(audioChannel).getVoiceChannel().getPermissionOverride(member).getManager().deny(memberAllowedPermissions).queue();
+                        getAutoVoice(audioChannel).removeChannelAdmin(member);
                         updateChannelName(audioChannel);
                     }
                 }
@@ -70,9 +89,8 @@ public class VoiceChannelManager {
             voiceChannel.sendMessage("`" + member.getEffectiveName() + "` created a new channel").queue();
             AutoVoice av = new AutoVoice(voiceChannel);
             channels.add(av);
-            av.addChannelAdmin(member);
-            av.addPermissionsForAdmin(member);
             Main.getNoctori().moveVoiceMember(member,voiceChannel).queue();
+            voiceChannel.upsertPermissionOverride(member).grant(memberAllowedPermissions).submit().whenComplete((permissionOverride, throwable) -> {av.addChannelAdmin(member);});
         });
     }
 
@@ -149,7 +167,6 @@ public class VoiceChannelManager {
             if (voiceChannel != null) {
                 if (!voiceChannel.getChannelAdmins().contains(member)) {
                     message.reply("`" + member.getEffectiveName() + "` was made a Channel Admin.").queue();
-                    voiceChannel.addPermissionsForAdmin(member);
                 } else {
                     message.reply("`" + member.getEffectiveName() + "` is already a Channel Admin.").queue();
                 }
@@ -163,12 +180,17 @@ public class VoiceChannelManager {
             if (voiceChannel != null) {
                 if (voiceChannel.getChannelAdmins().contains(member)) {
                     message.reply("`" + member.getEffectiveName() + "` was removed as a Channel Admin.").queue();
-                    voiceChannel.removePermissionsForAdmin(member);
                 } else {
                     message.reply("`" + member.getEffectiveName() + "` is not a Channel Admin.").queue();
                 }
             }
         }
+    }
+
+    public static List<Member> getChannelAdmins(VoiceChannel voiceChannel) {
+        AutoVoice av = getAutoVoice(voiceChannel);
+        if (av == null) return new ArrayList<>();
+        return av.getChannelAdmins();
     }
 
     private static AutoVoice getAutoVoice(AudioChannel audioChannel) {
@@ -189,12 +211,6 @@ public class VoiceChannelManager {
         return null;
     }
 
-    public static List<Member> getChannelAdmins(VoiceChannel voiceChannel) {
-        AutoVoice av = getAutoVoice(voiceChannel);
-        if (av == null) return new ArrayList<>();
-        return av.getChannelAdmins();
-    }
-
 }
 
 class AutoVoice {
@@ -211,28 +227,22 @@ class AutoVoice {
     }
 
     public void addChannelAdmin(Member member) {
-        channelAdmins.add(member);
-    }
-
-    public void addPermissionsForAdmin(Member member) {
-        Collection<Permission> allowed = new ArrayList<>();
-        allowed.add(Permission.KICK_MEMBERS);
-        allowed.add(Permission.MANAGE_CHANNEL);
-        allowed.add(Permission.MANAGE_PERMISSIONS);
-        allowed.add(Permission.CREATE_INSTANT_INVITE);
-        allowed.add(Permission.VOICE_DEAF_OTHERS);
-        allowed.add(Permission.VOICE_MUTE_OTHERS);
-        allowed.add(Permission.MESSAGE_MENTION_EVERYONE);
-        allowed.add(Permission.MESSAGE_MENTION_EVERYONE);
-        getVoiceChannel().getManager().putMemberPermissionOverride(member.getIdLong(), allowed, new ArrayList<>()).queue();
+        try {
+            channelAdmins.add(member);
+            PermissionOverride e = voiceChannel.getPermissionOverride(member);
+            e.getManager().grant(VoiceChannelManager.adminAllowedPermissions).queue();
+        } catch (NullPointerException e) {
+            VoiceChannelManager.log.error("Permission Override was null.");
+        }
     }
 
     public void removeChannelAdmin(Member member) {
-        channelAdmins.remove(member);
-    }
-
-    public void removePermissionsForAdmin(Member member) {
-        getVoiceChannel().getPermissionOverride(member).getManager().resetAllow().queue();
+        try {
+            channelAdmins.remove(member);
+            voiceChannel.getPermissionOverride(member).getManager().deny(VoiceChannelManager.adminAllowedPermissions).queue();
+        } catch (NullPointerException e) {
+            VoiceChannelManager.log.error("Permission Override was null.");
+        }
     }
 
     public List<Member> getChannelAdmins() {
@@ -243,7 +253,4 @@ class AutoVoice {
         return voiceChannel.getMembers();
     }
 
-    public void sendMessage(String string) {
-        getVoiceChannel().sendMessage(string).queue();
-    }
 }
