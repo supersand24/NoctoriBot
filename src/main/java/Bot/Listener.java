@@ -105,21 +105,6 @@ public class Listener extends ListenerAdapter {
                                         log.info("Voice Command " + command + " Received!");
                                         switch (command) {
                                             //Unknown Command
-                                            case "addAdmin" -> {
-                                                if (e.getMessage().getMentions().getMembers().size() >= 1) {
-                                                    VoiceChannelManager.addChannelAdmin(e.getMessage().getMentions().getMembers().get(0), e.getMessage());
-                                                } else {
-                                                    e.getMessage().reply("No one mentioned").mentionRepliedUser(false).queue();
-                                                }
-                                            }
-                                            case "removeAdmin" -> {
-                                                if (e.getMessage().getMentions().getMembers().size() >= 1) {
-                                                    VoiceChannelManager.removeChannelAdmin(e.getMessage().getMentions().getMembers().get(0),e.getMessage());
-                                                } else {
-                                                    e.getMessage().reply("No one mentioned").mentionRepliedUser(false).queue();
-                                                }
-                                            }
-                                            case "channelAdmins" -> e.getMessage().reply(VoiceChannelManager.getChannelAdmins(e.getChannel().asVoiceChannel()).stream().map(Member::getEffectiveName).toList().toString()).queue();
                                             default -> e.getMessage().reply("Unknown Command").queue();
                                         }
                                     }
@@ -139,30 +124,4 @@ public class Listener extends ListenerAdapter {
         }
     }
 
-    @Override
-    public void onUserUpdateActivities(@NotNull UserUpdateActivitiesEvent e) {
-        GuildVoiceState voiceState = e.getMember().getVoiceState();
-        if (voiceState.inAudioChannel()) VoiceChannelManager.updateChannelName(voiceState.getChannel());
-    }
-
-    @Override
-    public void onGuildVoiceJoin(@NotNull GuildVoiceJoinEvent e) {
-        Member member = e.getMember();
-        Bank.daily(e.getMember());
-        VoiceChannelManager.join(member,e.getChannelJoined());
-    }
-
-    @Override
-    public void onGuildVoiceLeave(@NotNull GuildVoiceLeaveEvent e) {
-        VoiceChannelManager.leave(e.getMember(),e.getChannelLeft());
-    }
-
-    @Override
-    public void onGuildVoiceMove(@NotNull GuildVoiceMoveEvent e) {
-        Member member = e.getMember();
-        AudioChannel channelLeft = e.getChannelLeft();
-        VoiceChannelManager.leave(member,channelLeft);
-        if (!channelLeft.getName().equals("New Channel")) VoiceChannelManager.join(member,e.getChannelJoined());
-
-    }
 }

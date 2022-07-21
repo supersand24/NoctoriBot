@@ -40,12 +40,11 @@ public class Main {
                         CacheFlag.EMOJI
                 );
 
-        builder.addEventListeners( new Listener() );
+        builder.addEventListeners( new Listener(), new VoiceManager() );
 
         try {
             jda = builder.build();
             jda.awaitReady();
-            VoiceChannelManager.initialize();
         } catch (LoginException | InterruptedException e) {
             e.printStackTrace();
         }
