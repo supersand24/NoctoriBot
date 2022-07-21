@@ -1,9 +1,11 @@
 package Bot;
 
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.ReconnectedEvent;
+import net.dv8tion.jda.api.events.channel.update.ChannelUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent;
@@ -13,14 +15,17 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class VoiceManager extends ListenerAdapter {
 
     protected final Logger log = LoggerFactory.getLogger(VoiceManager.class);
 
     //protected final List<NoctoriVoiceChannel> channels = new ArrayList<>();
-    protected final Hashtable<Long,NoctoriVoiceChannel> channels = new Hashtable<>();
+    protected final static Hashtable<Long,NoctoriVoiceChannel> channels = new Hashtable<>();
 
     private long AUTO_VOICE_NEW_CHANNEL_ID = 984491055636443216L;
     private long AUTO_VOICE_CATEGORY_ID = 964543894832427018L;
@@ -98,7 +103,7 @@ public class VoiceManager extends ListenerAdapter {
                     vc.delete();
                 } else {
                     vc.denyPermissions(member);
-                    //TRY AND RENAME CHAT
+                    rename(vc);
                 }
             }
         }
@@ -114,16 +119,18 @@ public class VoiceManager extends ListenerAdapter {
 
         if (channelLeft.getType() == ChannelType.VOICE) {
             log.info(member.getEffectiveName() + " moved from " + channelLeft.getName() + " to " + channelJoined.getName() + ".");
-            if (isAfkChannel(channelJoined))
+            if (isAfkChannel(channelJoined)) {
                 vcLeft.sendMessage("`" + member.getEffectiveName() + "` went AFK.").tts(true).queue();
-            if (!isAfkChannel(channelLeft)) {
-                vcLeft.sendMessage("`" + member.getEffectiveName() + "` moved to another call.").tts(true).queue();
-                if (channelLeft.getMembers().size() <= 0) {
-                    channels.remove(channelLeft.getIdLong());
-                    vcLeft.delete();
-                } else {
-                    vcLeft.denyPermissions(member);
-                    //TRY AND RENAME CHAT
+            } else {
+                if (!isAfkChannel(channelLeft)) {
+                    vcLeft.sendMessage("`" + member.getEffectiveName() + "` moved to another call.").tts(true).queue();
+                    if (channelLeft.getMembers().size() <= 0) {
+                        channels.remove(channelLeft.getIdLong());
+                        vcLeft.delete();
+                    } else {
+                        vcLeft.denyPermissions(member);
+                        rename(vcLeft);
+                    }
                 }
             }
         }
@@ -131,7 +138,10 @@ public class VoiceManager extends ListenerAdapter {
         switch (channelJoined.getType()) {
             case VOICE -> {
                 if (!isAfkChannel(channelJoined)) {
-                    vcJoined.sendMessage("`" + member.getEffectiveName() + "` returned from AFK.").tts(true).queue();
+                    if (isAfkChannel(channelLeft))
+                        vcJoined.sendMessage("`" + member.getEffectiveName() + "` returned from AFK.").tts(true).queue();
+                    else
+                        vcJoined.sendMessage("`" + member.getEffectiveName() + "` joined from another call.").tts(true).queue();
                     vcJoined.grantPermissions(member);
                 }
             }
@@ -151,9 +161,94 @@ public class VoiceManager extends ListenerAdapter {
         }
     }
 
+    @Override
+    public void onChannelUpdateName(@NotNull ChannelUpdateNameEvent e) {
+        if (e.getChannelType() == ChannelType.VOICE) {
+            //Make sure it is an auto voice channel.
+            if (!isAfkChannel(e.getChannel().asVoiceChannel())) {
+                NoctoriVoiceChannel voiceChannel = channels.get(e.getChannel().getIdLong());
+                voiceChannel.sendMessage("Channel was renamed to " + e.getNewValue() + ".").queue();
+                voiceChannel.updateLastRenamed();
+                voiceChannel.setAutoRename(false);
+            }
+        }
+    }
+
     private boolean isAfkChannel(AudioChannel audioChannel) {
         if (Main.getNoctori().getAfkChannel() == null) return false;
         return audioChannel.getIdLong() == Main.getNoctori().getAfkChannel().getIdLong();
+    }
+
+    private void rename(NoctoriVoiceChannel voiceChannel) {
+        //If Auto Rename is turned on.
+        if (voiceChannel.getAutoRename()) {
+            //If Enough Time has passed.
+            if (voiceChannel.getTimeSinceRename() >= 10) {
+
+                Map<String, Integer> hashMap = getVoiceChannelActivities(voiceChannel);
+
+                System.out.println(hashMap);
+                String mostCommonKey = "Vibing";
+                int maxValue = 1;
+                for (Map.Entry<String, Integer> entry : hashMap.entrySet()) {
+                    if (entry.getValue() > maxValue) {
+                        mostCommonKey = entry.getKey();
+                        maxValue = entry.getValue();
+                    }
+                }
+
+                if (!mostCommonKey.equals(voiceChannel.getName())) {
+                    voiceChannel.sendMessage("Channel was automatically renamed to `" + mostCommonKey + "`.").queue();
+                    voiceChannel.getVoiceChannel().getManager().setName(mostCommonKey).queue();
+                    voiceChannel.updateLastRenamed();
+                    log.info(voiceChannel.getVoiceChannel().getName() + " was automatically renamed to `" + mostCommonKey + "`.");
+
+                }
+
+            } else {
+                System.out.println("Not enough time passed, will not rename.");
+            }
+        }
+    }
+
+    private Map<String, Integer> getVoiceChannelActivities(NoctoriVoiceChannel voiceChannel) {
+        List<Member> members = voiceChannel.getMembers();
+        Map<String, Integer> hashMap = new HashMap<>();
+        for (Member member : members) {
+            if (!member.getUser().isBot()) {
+                for (Activity activity : member.getActivities()) {
+                    switch (activity.getType()) {
+                        case PLAYING -> {
+                            switch (activity.getName()) {
+                                case "Fortnite" -> {
+                                    if (activity.isRich()) {
+                                        String details = activity.asRichPresence().getDetails();
+                                        if (details == null) {
+                                            hashMap.merge(activity.getName(), 1, Integer::sum);
+                                        } else {
+                                            switch (details.split(" ")[0]) {
+                                                case "Battle" -> hashMap.merge("Fortnite: Battle Royale", 1, Integer::sum);
+                                                case "Save" -> hashMap.merge("Fortnite: Save the World", 1, Integer::sum);
+                                                default -> {
+                                                    log.error("Unchecked Fortnite Rich Presence Case : " + activity.asRichPresence().getDetails());
+                                                    hashMap.merge(activity.getName(), 1, Integer::sum);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                default -> hashMap.merge(activity.getName(), 1, Integer::sum);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return hashMap;
+    }
+
+    public static NoctoriVoiceChannel getVoiceChannel(long channelId) {
+        return channels.get(channelId);
     }
 
 }
@@ -164,6 +259,11 @@ class NoctoriVoiceChannel {
     final Member creator;
 
     final List<Member> channelAdmins = new ArrayList<>();
+
+    boolean autoRename = true;
+    private LocalDateTime lastRenamed = LocalDateTime.now();
+
+    //Constructors
 
     public NoctoriVoiceChannel(AudioChannel audioChannel, Member member) {
         this.voiceChannel = Main.getNoctori().getVoiceChannelById(audioChannel.getId());
@@ -177,6 +277,8 @@ class NoctoriVoiceChannel {
         channelAdmins.add(member);
     }
 
+    //Getters and Setters
+
     public VoiceChannel getVoiceChannel() {
         return voiceChannel;
     }
@@ -189,8 +291,34 @@ class NoctoriVoiceChannel {
         return channelAdmins;
     }
 
+    public List<Member> getMembers() {
+        return getVoiceChannel().getMembers();
+    }
+
+    protected void setAutoRename(boolean autoRename) {
+        this.autoRename = autoRename;
+    }
+
+    public boolean getAutoRename() {
+        return autoRename;
+    }
+
+    public long getTimeSinceRename() {
+        return Duration.between(lastRenamed,LocalDateTime.now()).toMinutes();
+    }
+
+    //Ease of Access Commands
+
+    protected String getName() {
+        return getVoiceChannel().getName();
+    }
+
     protected MessageAction sendMessage(String message) {
         return getVoiceChannel().sendMessage(message);
+    }
+
+    protected void updateLastRenamed() {
+        lastRenamed = LocalDateTime.now();
     }
 
     protected void delete() {
@@ -215,6 +343,15 @@ class NoctoriVoiceChannel {
         }
         getVoiceChannel().upsertPermissionOverride(member).deny(permissions).queue();
 
+    }
+
+    public void sendSettingsEmbed() {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setTitle(getName());
+        embed.setDescription("Voice Channel Settings");
+        embed.addField("Channel Admins", getChannelAdmins().stream().map(Member::getEffectiveName).collect(Collectors.joining("\n")), true);
+        embed.addField("Auto Rename", String.valueOf(getAutoRename()), true);
+        voiceChannel.sendMessageEmbeds(embed.build()).queue();
     }
 
 }
