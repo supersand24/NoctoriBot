@@ -78,9 +78,9 @@ public class Listener extends ListenerAdapter {
                                                     case "onlinePlayers" -> new GetOnlinePlayers(e.getMessage());
                                                 }
                                             }
-                                            case "genshin_impact" -> {
+                                            case "hoyoverse" -> {
                                                 switch (command) {
-                                                    case "uid" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
+                                                    case "genshin-uid" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
                                                 }
                                             }
                                             case "casino-alpha" -> {
