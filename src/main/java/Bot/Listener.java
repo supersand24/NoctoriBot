@@ -94,6 +94,12 @@ public class Listener extends ListenerAdapter {
                                             default -> {
                                                 switch (command) {
                                                     //Unknown Command
+                                                    case "pay" -> {
+                                                        if (e.getMessage().getMentions().getMembers().size() > 0) {
+                                                            Bank.payMember(Integer.parseInt(messageSplit[1]),e.getMember(), e.getMessage().getMentions().getMembers().get(0));
+                                                            e.getMessage().reply("Payment Successful.").queue();
+                                                        }
+                                                    }
                                                     default -> e.getMessage().reply("Unknown Command").queue();
                                                 }
                                             }

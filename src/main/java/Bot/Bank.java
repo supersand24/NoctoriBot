@@ -70,6 +70,20 @@ public class Bank {
         return embed.build();
     }
 
+    public static void payMember(int amount, Member from, Member to) {
+        if (Var.getMoney(from.getUser()) >= amount) {
+            Var.removeMoney(from.getUser(), amount);
+            Var.addMoney(to.getUser(), amount);
+            from.getUser().openPrivateChannel().queue(privateChannel ->
+                privateChannel.sendMessage("You received " + amount + " Noctori Bucks from " + from.getEffectiveName() +".\nYour new balance is " + Var.getMoney(to.getUser()) + " Noctori Bucks.")
+            );
+        } else {
+            from.getUser().openPrivateChannel().queue(privateChannel ->
+                privateChannel.sendMessage("You tried to pay " + to.getEffectiveName() + " " + amount + " Noctori Bucks, but you do not have enough.\nYour account has " + Var.getMoney(from.getUser()) + " Noctori Bucks." ).queue()
+            );
+        }
+    }
+
     public static void anniversary(Member member) {
         int yearsJoined = OffsetDateTime.now().getYear() - member.getTimeJoined().getYear();
         Role role = getYearRole(yearsJoined);
