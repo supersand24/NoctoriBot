@@ -100,6 +100,8 @@ public class Listener extends ListenerAdapter {
                                         log.info("Voice Command " + command + " Received!");
                                         switch (command) {
                                             //Unknown Command
+                                            case "help" -> VoiceManager.sendHelpEmbed(e.getChannel().asVoiceChannel());
+                                            case "toggleLock" -> VoiceManager.toggleChannelLock(e.getChannel().getIdLong(), e.getMember());
                                             case "settings" -> VoiceManager.getVoiceChannel(e.getChannel().getIdLong()).sendSettingsEmbed();
                                             default -> e.getMessage().reply("Unknown Command").queue();
                                         }
