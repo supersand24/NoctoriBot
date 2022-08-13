@@ -4,6 +4,7 @@ import Game.BlackOps3.Manager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -67,6 +68,10 @@ public class Main {
             noctori = jda.getGuilds().get(0);
         }
         return noctori;
+    }
+
+    public static TextChannel getLogChannel() {
+        return getNoctori().getTextChannelById(444524933415043073L);
     }
 
 }

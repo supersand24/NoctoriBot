@@ -4,7 +4,10 @@ import Command.*;
 import Game.BlackOps3.Manager;
 import Game.Minecraft.GetOnlinePlayers;
 import Game.Minecraft.Username;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.ReadyEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -122,4 +125,25 @@ public class Listener extends ListenerAdapter {
         }
     }
 
+    @Override
+    public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent e) {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setAuthor(e.getUser().getName(), e.getUser().getEffectiveAvatarUrl(), e.getUser().getEffectiveAvatarUrl());
+        embed.setDescription(e.getUser().getName() + " joined Noctori.");
+        embed.setImage(e.getUser().getAvatarUrl());
+        embed.addField("Bot", String.valueOf(e.getUser().isBot()),true);
+        embed.setFooter("Account Creation Date");
+        embed.setTimestamp(e.getUser().getTimeCreated());
+        Main.getLogChannel().sendMessageEmbeds(embed.build()).queue();
+    }
+
+    @Override
+    public void onGuildMemberRemove(@NotNull GuildMemberRemoveEvent e) {
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setAuthor(e.getUser().getName(), e.getUser().getEffectiveAvatarUrl(), e.getUser().getEffectiveAvatarUrl());
+        embed.setDescription(e.getUser().getName() + " left Noctori.");
+        embed.setImage(e.getUser().getAvatarUrl());
+        embed.addField("Bot", String.valueOf(e.getUser().isBot()),true);
+        Main.getLogChannel().sendMessageEmbeds(embed.build()).queue();
+    }
 }
