@@ -57,11 +57,8 @@ public class VoiceManager extends ListenerAdapter {
     public void onReady(@NotNull ReadyEvent e) {
         log.info("Auto Voice Manager Setting Up...");
         //Locate the New Channel, and update the voice channel id.
-        for (StageChannel stageChannel : Main.getNoctori().getStageChannels()) {
-            if (stageChannel.getName().equals("New Channel")) {
-                AUTO_VOICE_NEW_CHANNEL_ID = stageChannel.getIdLong();
-            }
-        }
+        for (StageChannel stageChannel : Main.getNoctori().getStageChannels())
+            if (stageChannel.getName().equals("New Channel")) AUTO_VOICE_NEW_CHANNEL_ID = stageChannel.getIdLong();
 
         //Check all voice channels
         for (VoiceChannel vc : Main.getNoctori().getVoiceChannels()) {
@@ -84,6 +81,9 @@ public class VoiceManager extends ListenerAdapter {
                         }
                     }
                 }
+
+                //Default on the creator.
+                if (av.creator == null) av.getChannelAdmins().get(0);
 
                 //Check if channel is locked.
                 av.setLocked(vc.getPermissionOverride(Main.getNoctori().getPublicRole()).getDenied().contains(Permission.VOICE_CONNECT));
@@ -231,6 +231,7 @@ public class VoiceManager extends ListenerAdapter {
         //If Auto Rename is turned on.
         if (voiceChannel.getAutoRename()) {
             //If Enough Time has passed.
+            log.info("Attempting to rename " + voiceChannel.getName() + ", " + voiceChannel.getTimeSinceRename() + " mins have passed since last rename.");
             if (voiceChannel.getTimeSinceRename() >= 10) {
 
                 Map<String, Integer> hashMap = getVoiceChannelActivities(voiceChannel);
@@ -434,4 +435,13 @@ class NoctoriVoiceChannel {
         voiceChannel.sendMessageEmbeds(embed.build()).queue();
     }
 
+    @Override
+    public String toString() {
+        return "Voice Channel ID=" + voiceChannel.getIdLong() +
+                "\nCreator=" + creator.getEffectiveName() +
+                "\nChannel Admins=" + channelAdmins.stream().map(Member::getEffectiveName).toList() +
+                "\nAuto Rename=" + autoRename +
+                "\nLast Renamed=" + lastRenamed.toLocalTime() +
+                "\nLocked=" + locked;
+    }
 }

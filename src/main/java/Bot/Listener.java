@@ -5,14 +5,21 @@ import Game.BlackOps3.Manager;
 import Game.Minecraft.GetOnlinePlayers;
 import Game.Minecraft.Username;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.stream.Collectors;
 
 public class Listener extends ListenerAdapter {
 
@@ -22,6 +29,57 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onReady(@NotNull ReadyEvent e) {
         log.info("Listener is ready!");
+    }
+
+    @Override
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
+        switch (e.getName()) {
+            case "profile" -> {
+                switch (e.getSubcommandName()) {
+                    case "display" -> {
+                        OptionMapping option = e.getOption("member");
+                        if (option == null) {
+                            e.replyEmbeds(Profile.getProfile(e.getMember())).queue();
+                        } else {
+                            if (Main.getNoctori().getMembers().stream().map(Member::getIdLong).collect(Collectors.toList()).contains(option.getAsUser().getIdLong())) {
+                                e.replyEmbeds(Profile.getProfile(option.getAsMember())).queue();
+                            } else {
+                                e.reply("That user isn't in Noctori").setEphemeral(true).queue();
+                            }
+                        }
+                    }
+                    case "set" -> Profile.set(e);
+                    case "help" -> e.reply("WIP2").setEphemeral(true).queue();
+                }
+            }
+            case "money" -> {
+                switch (e.getSubcommandName()) {
+                    case "balance" -> e.reply("$" + Var.getMoney(e.getUser())).setEphemeral(true).queue();
+                    case "pay" -> {
+                        int sentMoney = e.getOption("amount").getAsInt();
+                        User user = e.getOption("member").getAsUser();
+                        if (Var.getMoney(user) >= sentMoney) {
+                            Var.addMoney(user, sentMoney);
+                            e.reply("$" + sentMoney + " has been sent to " + user.getName()).queue();
+                        } else {
+                            e.reply("Insufficient Funds...").setEphemeral(true).queue();
+                        }
+                    }
+                }
+            }
+            case "dev" -> {
+                switch (e.getSubcommandName()) {
+                    case "print" -> {
+                        switch (e.getOption("object").getAsInt()) {
+                            case 0 -> {
+                                System.out.println(VoiceManager.getVoiceChannel(e.getMember().getVoiceState().getChannel().getIdLong()));
+                            }
+                        }
+                    }
+                }
+                e.reply("Printed to console.").setEphemeral(true).queue();
+            }
+        }
     }
 
     @Override

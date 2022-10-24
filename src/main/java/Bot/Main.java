@@ -1,11 +1,14 @@
 package Bot;
 
-import Game.BlackOps3.Manager;
+import Command.Profile;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
@@ -46,6 +49,27 @@ public class Main {
         try {
             jda = builder.build();
             jda.awaitReady();
+
+            //Generic Slash Commands
+            getNoctori().upsertCommand("money","Checks your Noctori Bank.").addSubcommands(
+                    new SubcommandData("balance","Check how much money is in your account."),
+                    new SubcommandData("pay","Pay another user money, from your account.").addOptions(
+                            new OptionData(OptionType.USER,"member","Who you would like to pay.",true),
+                            new OptionData(OptionType.INTEGER,"amount","The amount you would like to send.",true).setMinValue(1)
+                    )
+            ).queue();
+
+            //Profile Command
+            Profile.init();
+
+            //Dev Command
+            getNoctori().upsertCommand("dev","Development Only!").addSubcommands(
+                    new SubcommandData("print","Outputs a report.").addOptions(
+                            new OptionData(OptionType.INTEGER,"object","What to print.").setRequired(true)
+                                    .addChoice("All Voice Channels",0)
+                    )
+            ).queue();
+
         } catch (LoginException | InterruptedException e) {
             e.printStackTrace();
         }
