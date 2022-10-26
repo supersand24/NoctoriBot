@@ -83,17 +83,26 @@ public class VoiceManager extends ListenerAdapter {
                 }
 
                 //Default on the creator.
-                if (av.creator == null) av.getChannelAdmins().get(0);
+                //if (av.creator == null) av.getChannelAdmins().get(0);
 
                 //Check if channel is locked.
-                av.setLocked(vc.getPermissionOverride(Main.getNoctori().getPublicRole()).getDenied().contains(Permission.VOICE_CONNECT));
+                if (vc.getPermissionOverride(Main.getNoctori().getPublicRole()) != null) {
+                    av.setLocked(vc.getPermissionOverride(Main.getNoctori().getPublicRole()).getDenied().contains(Permission.VOICE_CONNECT));
+                }
 
                 //Finally, add to master list.
                 channels.put(vc.getIdLong(), av);
-                log.info(vc.getName() + " Auto Voice Channel added.");
+
+                //Print the results to the console.
+                System.out.println(av);
+
             }
         }
+
+        //Final Print
+        System.out.println("--------------------------------------");
         log.info("Auto Voice Manager Ready!");
+
     }
 
     @Override
@@ -111,8 +120,10 @@ public class VoiceManager extends ListenerAdapter {
                 case VOICE -> {
                     log.info(member.getEffectiveName() + " joined " + channelJoined.getName() + ".");
                     NoctoriVoiceChannel vc = channels.get(channelJoined.getIdLong());
-                    vc.sendMessage("`" + member.getEffectiveName() + "` joined the call.").tts(true).queue();
-                    vc.getVoiceChannel().upsertPermissionOverride(member).grant(joinChannelPermissions).queue();
+                    if (vc != null) {
+                        vc.sendMessage("`" + member.getEffectiveName() + "` joined the call.").tts(true).queue();
+                        vc.getVoiceChannel().upsertPermissionOverride(member).grant(joinChannelPermissions).queue();
+                    }
                 }
                 case STAGE -> newChannel((StageChannel) channelJoined,member);
             }
@@ -134,7 +145,7 @@ public class VoiceManager extends ListenerAdapter {
                     vc.delete();
                 } else {
                     vc.getVoiceChannel().upsertPermissionOverride(member).deny(joinChannelPermissions).queue();
-                    rename(vc);
+                    autoRename(vc);
                 }
             }
         }
@@ -145,8 +156,8 @@ public class VoiceManager extends ListenerAdapter {
         Member member = e.getMember();
         AudioChannel channelJoined = e.getChannelJoined();
         AudioChannel channelLeft = e.getChannelLeft();
-        NoctoriVoiceChannel vcJoined = channels.get(channelJoined.getIdLong());
-        NoctoriVoiceChannel vcLeft = channels.get(channelLeft.getIdLong());
+        NoctoriVoiceChannel vcJoined = channels.get(e.getChannelJoined().getIdLong());
+        NoctoriVoiceChannel vcLeft = channels.get(e.getChannelLeft().getIdLong());
 
         if (channelLeft.getType() == ChannelType.VOICE) {
             if (channelJoined.getType() == ChannelType.STAGE)
@@ -168,7 +179,7 @@ public class VoiceManager extends ListenerAdapter {
                         vcLeft.delete();
                     } else {
                         vcLeft.getVoiceChannel().upsertPermissionOverride(member).deny(joinChannelPermissions).queue();
-                        rename(vcLeft);
+                        autoRename(vcLeft);
                     }
                 }
             }
@@ -206,7 +217,7 @@ public class VoiceManager extends ListenerAdapter {
     @Override
     public void onUserUpdateActivities(@NotNull UserUpdateActivitiesEvent e) {
         GuildVoiceState voiceState = e.getMember().getVoiceState();
-        if (voiceState.inAudioChannel()) rename(getVoiceChannel(voiceState.getChannel().getIdLong()));
+        if (voiceState.inAudioChannel()) autoRename(getVoiceChannel(voiceState.getChannel().getIdLong()));
     }
 
     @Override
@@ -227,7 +238,7 @@ public class VoiceManager extends ListenerAdapter {
         return audioChannel.getIdLong() == Main.getNoctori().getAfkChannel().getIdLong();
     }
 
-    private void rename(NoctoriVoiceChannel voiceChannel) {
+    private void autoRename(NoctoriVoiceChannel voiceChannel) {
         //If Auto Rename is turned on.
         if (voiceChannel.getAutoRename()) {
             //If Enough Time has passed.
@@ -257,6 +268,10 @@ public class VoiceManager extends ListenerAdapter {
                 log.trace("Not enough time passed, will not rename " + voiceChannel.getName() + " channel.");
             }
         }
+    }
+
+    public static Collection<NoctoriVoiceChannel> getNoctoriVoiceChannels() {
+        return channels.values();
     }
 
     protected static Map<String, Integer> getVoiceChannelActivities(NoctoriVoiceChannel voiceChannel) {
@@ -304,7 +319,7 @@ public class VoiceManager extends ListenerAdapter {
         NoctoriVoiceChannel vc = getVoiceChannel(channelId);
         if (vc == null) return;
         if (vc.channelAdmins.contains(commandAuthor)) {
-            if (vc.isLocked()) vc.unlockChannel(); else vc.lockChannel();
+            vc.setLocked(!vc.isLocked());
         }
     }
 
@@ -319,7 +334,6 @@ public class VoiceManager extends ListenerAdapter {
 
         voiceChannel.sendMessageEmbeds(embed.build()).queue();
     }
-
 }
 
 class NoctoriVoiceChannel {
@@ -386,10 +400,25 @@ class NoctoriVoiceChannel {
     }
 
     public void setLocked(boolean locked) {
-        this.locked = locked;
+        if (locked != this.locked) {
+            this.locked = locked;
+            if (locked) {
+                getVoiceChannel().upsertPermissionOverride(Main.getNoctori().getPublicRole()).deny(VoiceManager.lockChannelPermissions).queue(permissionOverride ->
+                        sendMessage("This channel is now `locked`.").queue()
+                );
+            } else {
+                getVoiceChannel().upsertPermissionOverride(Main.getNoctori().getPublicRole()).grant(VoiceManager.lockChannelPermissions).queue(permissionOverride ->
+                        sendMessage("This channel is now `unlocked`.").queue()
+                );
+            }
+        }
     }
 
     //Ease of Access Commands
+
+    public void setName(String name) {
+        voiceChannel.getManager().setName(name).queue();
+    }
 
     protected String getName() {
         return getVoiceChannel().getName();
@@ -397,20 +426,6 @@ class NoctoriVoiceChannel {
 
     protected void updateLastRenamed() {
         lastRenamed = LocalDateTime.now();
-    }
-
-    protected void lockChannel() {
-        setLocked(true);
-        getVoiceChannel().upsertPermissionOverride(Main.getNoctori().getPublicRole()).deny(VoiceManager.lockChannelPermissions).queue(permissionOverride ->
-            sendMessage("This channel is now `locked`.").queue()
-        );
-    }
-
-    protected void unlockChannel() {
-        setLocked(false);
-        getVoiceChannel().upsertPermissionOverride(Main.getNoctori().getPublicRole()).grant(VoiceManager.lockChannelPermissions).queue(permissionOverride ->
-            sendMessage("This channel is now `unlocked`.").queue()
-        );
     }
 
     protected MessageAction sendMessage(String message) {
@@ -437,11 +452,21 @@ class NoctoriVoiceChannel {
 
     @Override
     public String toString() {
-        return "Voice Channel ID=" + voiceChannel.getIdLong() +
-                "\nCreator=" + creator.getEffectiveName() +
-                "\nChannel Admins=" + channelAdmins.stream().map(Member::getEffectiveName).toList() +
-                "\nAuto Rename=" + autoRename +
-                "\nLast Renamed=" + lastRenamed.toLocalTime() +
-                "\nLocked=" + locked;
+        StringBuilder sb = new StringBuilder();
+        sb.append("--------------------------------------\n");
+        sb.append(voiceChannel.getName()).append(" | ").append(voiceChannel.getIdLong()).append("\n");
+        sb.append("--------------------------------------\n");
+        if (creator == null) {
+            sb.append("Creator : None  | Admins : ").append(channelAdmins.stream().map(Member::getEffectiveName).toList()).append("\n");
+        } else {
+            sb.append("Creator : ").append(creator.getEffectiveName()).append(" | Admins : ").append(channelAdmins.stream().map(Member::getEffectiveName).toList()).append("\n");
+        }
+        sb.append("Auto Rename = ").append(autoRename).append(" | Locked = ").append(locked).append("\n");
+        sb.append("Last Renamed = ").append(lastRenamed.toLocalTime()).append("\n");
+        sb.append("Voice Channel Members");
+        for (Member member : voiceChannel.getMembers()) {
+            sb.append("\n   ").append(member.getEffectiveName()).append(" -> ").append(member.getActivities().stream().map(Activity::getName).collect(Collectors.toList()));
+        }
+        return sb.toString();
     }
 }

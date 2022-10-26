@@ -62,6 +62,15 @@ public class Main {
             //Profile Command
             Profile.init();
 
+            //Voice Channel Command
+            getNoctori().upsertCommand("vc","Voice Channel Commands").addSubcommands(
+                    new SubcommandData("edit","Edits your current Voice Channel, if you are a Voice Channel Admin.").addOptions(
+                            new OptionData(OptionType.STRING,"name","The Channel Name."),
+                            new OptionData(OptionType.BOOLEAN, "auto-rename", "If the channel should auto renamed based off of user activities."),
+                            new OptionData(OptionType.BOOLEAN, "locked", "If people are allowed to join the channel.")
+                    )
+            ).queue();
+
             //Dev Command
             getNoctori().upsertCommand("dev","Development Only!").addSubcommands(
                     new SubcommandData("print","Outputs a report.").addOptions(

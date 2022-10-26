@@ -14,11 +14,11 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 public class Listener extends ListenerAdapter {
@@ -67,12 +67,35 @@ public class Listener extends ListenerAdapter {
                     }
                 }
             }
+            case "vc" -> {
+                if (e.getMember().getVoiceState().inAudioChannel()) {
+                    NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getMember().getVoiceState().getChannel().getIdLong());
+                    if (vc == null) {
+                        e.reply("You are not in a voice channel that can be managed.").queue();
+                    } else {
+                        for (OptionMapping option : e.getOptions()) {
+                            switch (option.getName()) {
+                                case "name" -> vc.setName(option.getAsString());
+                                case "auto-rename" -> vc.setAutoRename(option.getAsBoolean());
+                                case "locked" -> vc.setLocked(option.getAsBoolean());
+                            }
+                        }
+                        e.reply("Edits applied.").setEphemeral(true).queue();
+                    }
+                } else {
+                    e.reply("You are not in a voice channel.").queue();
+                }
+            }
             case "dev" -> {
                 switch (e.getSubcommandName()) {
                     case "print" -> {
                         switch (e.getOption("object").getAsInt()) {
                             case 0 -> {
-                                System.out.println(VoiceManager.getVoiceChannel(e.getMember().getVoiceState().getChannel().getIdLong()));
+                                Collection<NoctoriVoiceChannel> channels = VoiceManager.getNoctoriVoiceChannels();
+                                if (channels.size() == 0) System.out.println("No Voice Channels, in memory."); else {
+                                    for (NoctoriVoiceChannel vc : channels) System.out.println(vc);
+                                    System.out.println("--------------------------------------");
+                                }
                             }
                         }
                     }
