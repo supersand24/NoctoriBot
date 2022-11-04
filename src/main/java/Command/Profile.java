@@ -5,6 +5,7 @@ import Bot.Var;
 import Game.BlackOps3.Manager;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -90,7 +91,7 @@ public class Profile {
         return embed.build();
     }
 
-    public static void sendProfile(User user, MessageChannel messageChannel) {
+    public static void sendProfile(User user, MessageChannelUnion messageChannel) {
         //Find Member
         Member member = Main.getNoctori().getMemberById(user.getId());
         if (member != null) {
