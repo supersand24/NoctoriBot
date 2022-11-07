@@ -5,6 +5,7 @@ import Game.BlackOps3.Manager;
 import Game.Minecraft.GetOnlinePlayers;
 import Game.Minecraft.Username;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
@@ -97,10 +98,57 @@ public class Listener extends ListenerAdapter {
                                     System.out.println("--------------------------------------");
                                 }
                             }
+                            case 1 -> {
+                                for (Member member : Main.getNoctori().getMembers()) {
+                                    System.out.println(Var.print(member.getUser()));
+                                }
+                            }
+                            case 99 -> {
+                                for (Member member : Main.getNoctori().getMembers()) {
+                                    if (Var.getInvitedByMember(member.getUser()).equals("0") && !member.getUser().isBot()) {
+                                        System.out.println(member.getEffectiveName() + " | " + member.getIdLong());
+                                    }
+                                }
+                            }
                         }
+                        e.reply("Printed to console.").setEphemeral(true).queue();
+                    }
+                    case "var" -> {
+                        StringBuilder sb = new StringBuilder();
+                        User user = e.getOption("user").getAsUser();
+                        if (user.isBot()) {
+                            sb.append(user.getName()).append(" is a bot.");
+                        } else {
+                            sb.append("Submitted changes for ").append(user.getName());
+                            for (OptionMapping option : e.getOptions()) {
+                                switch (option.getName()) {
+                                    case "money" -> Var.setMoney(user,option.getAsInt());
+                                    case "notification" -> Var.setNotification(user,option.getAsBoolean());
+                                    case "genshin-uid" -> Var.setGenshinUid(user,option.getAsLong());
+                                    case "minecraft-username" -> Var.setMinecraftUsername(user,option.getAsString());
+                                    case "profile-fields" -> {
+                                        String fields = option.getAsString();
+                                        if (fields.startsWith("[") && fields.endsWith("]")) {
+                                            Var.setMinecraftUsername(user,fields);
+                                        } else {
+                                            sb.append("\nThe profile format is incorrect.");
+                                        }
+                                    }
+                                    case "invited-by" -> {
+                                        Member invitedBy = option.getAsMember();
+                                        if (invitedBy == null) {
+                                            sb.append("\nThat member is not in the server.");
+                                        } else {
+                                            Var.setInvitedByMember(user, option.getAsMember());
+                                            Var.addMemberInvited(invitedBy.getUser(),Main.getNoctori().getMemberById(user.getIdLong()));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        e.reply(sb.toString()).setEphemeral(true).queue();
                     }
                 }
-                e.reply("Printed to console.").setEphemeral(true).queue();
             }
         }
     }

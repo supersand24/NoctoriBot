@@ -458,5 +458,21 @@ public class Var {
         in.close();
     }
 
+    public static String print(User user) {
+        return user.getName() + " | " + user.getId() + "\n" +
+                "Money: " + getMoney(user) + "\n" +
+                "Daily Date: " + getDailyClaimed(user) + "\n" +
+                "Dailies Claimed: " + getDailiesClaimed(user) + "\n" +
+                "Notification: " + getNotification(user) + "\n" +
+                "Members Invited: " + getMembersInvited(user) + "\n" +
+                "Invited by: " + getInvitedByMember(user) + "\n" +
+                "Game Claimed Date: " + getGameClaimed(user) + "\n" +
+                "Game Keys: " + getGameClaimed(user) + "\n" +
+                "Genshin UID: " + getGenshinUid(user) + "\n" +
+                "Minecraft Username: " + getMinecraftUsername(user) + "\n" +
+                "Profile Fields: " + getProfileFields(user) + "\n" +
+                "-------------------------------";
+    }
+
 
 }

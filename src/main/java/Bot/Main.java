@@ -74,7 +74,18 @@ public class Main {
             getNoctori().upsertCommand("dev","Development Only!").addSubcommands(
                     new SubcommandData("print","Outputs a report.").addOptions(
                             new OptionData(OptionType.INTEGER,"object","What to print.").setRequired(true)
-                                    .addChoice("All Voice Channels",0)
+                                    .addChoice("Voice Channels",0)
+                                    .addChoice("User Variables",1)
+                                    .addChoice("All Unclaimed Users",99)
+                    ),
+                    new SubcommandData("var","Edits a users variables.").addOptions(
+                            new OptionData(OptionType.USER,"user","Who to modify.").setRequired(true),
+                            new OptionData(OptionType.INTEGER,"money","Change Money Value").setMinValue(0).setMaxValue(999999),
+                            new OptionData(OptionType.BOOLEAN,"notification","Change Notification Value"),
+                            new OptionData(OptionType.USER,"invited-by","Change Invited By Value"),
+                            new OptionData(OptionType.INTEGER,"genshin-uid","Change Genshin UID Value"),
+                            new OptionData(OptionType.STRING,"minecraft-username","Change Minecraft Username Value"),
+                            new OptionData(OptionType.STRING,"profile-fields","Change Profile Fields Value")
                     )
             ).queue();
 
