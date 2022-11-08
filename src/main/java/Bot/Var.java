@@ -458,6 +458,27 @@ public class Var {
         in.close();
     }
 
+    public static void createNewVariableFile(Member member) {
+        try {
+            List<String> content = new ArrayList<>();
+            content.set(VAR_MONEY,"0");
+            content.set(VAR_DAILY_CLAIMED_DATE,LocalDate.now().toString());
+            content.set(VAR_DAILIES_CLAIMED,"1");
+            content.set(VAR_NOTIFICATION,"false");
+            content.set(VAR_MEMBERS_INVITED,"[]");
+            content.set(VAR_INVITED_BY_MEMBER,"0");
+            content.set(VAR_GAME_CLAIMED_DATE,LocalDate.now().toString());
+            content.set(VAR_GAME_KEYS,"[]");
+            content.set(VAR_GENSHIN_UID,"0");
+            content.set(VAR_MINECRAFT_USERNAME,"0");
+            content.set(VAR_PROFILE_FIELDS,"[0]");
+            log.debug("Created a new variable file for" + member.getEffectiveName() + " as " + member.getId() + ".var");
+            Files.write(Paths.get("variables/" + member.getId() + ".var"), content, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static String print(User user) {
         return user.getName() + " | " + user.getId() + "\n" +
                 "Money: " + getMoney(user) + "\n" +

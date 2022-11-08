@@ -266,10 +266,11 @@ public class Listener extends ListenerAdapter {
         embed.setAuthor(e.getUser().getName(), e.getUser().getEffectiveAvatarUrl(), e.getUser().getEffectiveAvatarUrl());
         embed.setDescription(e.getUser().getName() + " joined Noctori.");
         embed.setImage(e.getUser().getAvatarUrl());
-        embed.addField("Bot", String.valueOf(e.getUser().isBot()),true);
+        embed.addField("Is Bot", String.valueOf(e.getUser().isBot()),true);
         embed.setFooter("Account Creation Date");
         embed.setTimestamp(e.getUser().getTimeCreated());
         Main.getLogChannel().sendMessageEmbeds(embed.build()).queue();
+        Var.createNewVariableFile(e.getMember());
     }
 
     @Override
