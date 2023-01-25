@@ -54,7 +54,8 @@ public class VoiceManager extends ListenerAdapter {
 
     protected final static EnumSet<Permission> newChannelPermissions = EnumSet.of(
             Permission.VIEW_CHANNEL,        Permission.VOICE_SPEAK,
-            Permission.VOICE_STREAM,        Permission.MESSAGE_TTS
+            Permission.VOICE_STREAM,        Permission.MESSAGE_TTS,
+            Permission.VOICE_START_ACTIVITIES
     );
 
     @Override
@@ -120,6 +121,8 @@ public class VoiceManager extends ListenerAdapter {
         AudioChannel channelJoined = e.getChannelJoined();
         AudioChannel channelLeft = e.getChannelLeft();
 
+        Bank.daily(member);
+
         //Get the channel joined.
         if (channelJoined != null) {
             log.info(member.getEffectiveName() + " joined " + channelJoined.getName() + ".");
@@ -155,6 +158,7 @@ public class VoiceManager extends ListenerAdapter {
                     vc.delete();
                 } else {
                     vc.removeChannelAdmin(member);
+                    vc.getVoiceChannel().upsertPermissionOverride(member).clear(joinChannelPermissions).clear(adminAllowedPermissions).queue();
                 }
             });
         }
@@ -282,6 +286,14 @@ public class VoiceManager extends ListenerAdapter {
         if (vc == null) return;
         if (vc.channelAdmins.contains(commandAuthor)) {
             vc.setLocked(!vc.isLocked());
+        }
+    }
+
+    public static void giveChannelKey(long channelId, Member commandAuthor, Member member) {
+        NoctoriVoiceChannel vc = getVoiceChannel(channelId);
+        if (vc == null) return;
+        if (vc.channelAdmins.contains(commandAuthor)) {
+            vc.getVoiceChannel().upsertPermissionOverride(member).grant(lockChannelPermissions).queue();
         }
     }
 

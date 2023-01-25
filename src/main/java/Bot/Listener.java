@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -50,7 +51,6 @@ public class Listener extends ListenerAdapter {
                         }
                     }
                     case "set" -> Profile.set(e);
-                    case "help" -> e.reply("WIP2").setEphemeral(true).queue();
                 }
             }
             case "money" -> {
@@ -74,14 +74,35 @@ public class Listener extends ListenerAdapter {
                     if (vc == null) {
                         e.reply("You are not in a voice channel that can be managed.").queue();
                     } else {
-                        for (OptionMapping option : e.getOptions()) {
-                            switch (option.getName()) {
-                                case "name" -> vc.setName(option.getAsString());
-                                case "auto-rename" -> vc.setAutoRename(option.getAsBoolean());
-                                case "locked" -> vc.setLocked(option.getAsBoolean());
+                        switch (e.getSubcommandName()) {
+                            case "give-key" -> {
+                                Member member = e.getOption("member").getAsMember();
+                                if (member == null) {
+                                    e.reply("That user does not appear to be a member in the server.").setEphemeral(true).queue();
+                                } else {
+                                    AudioChannelUnion channel = e.getMember().getVoiceState().getChannel();
+                                    if (channel == null) {
+                                        e.reply("You are not in a voice channel!").setEphemeral(true).queue();
+                                    } else {
+                                        VoiceManager.giveChannelKey(channel.getIdLong(),e.getMember(),member);
+                                        member.getUser().openPrivateChannel().queue(privateChannel -> {
+                                            privateChannel.sendMessage(e.getMember().getEffectiveName() + " has gifted you a key for the " + e.getMember().getVoiceState().getChannel().getName() + " voice channel.").queue();
+                                        });
+                                        e.reply(member.getEffectiveName() + " has received a key.").setEphemeral(true).queue();
+                                    }
+                                }
+                            }
+                            case "edit" -> {
+                                for (OptionMapping option : e.getOptions()) {
+                                    switch (option.getName()) {
+                                        case "name" -> vc.setName(option.getAsString());
+                                        case "auto-rename" -> vc.setAutoRename(option.getAsBoolean());
+                                        case "locked" -> vc.setLocked(option.getAsBoolean());
+                                    }
+                                }
+                                e.reply("Edits applied.").setEphemeral(true).queue();
                             }
                         }
-                        e.reply("Edits applied.").setEphemeral(true).queue();
                     }
                 } else {
                     e.reply("You are not in a voice channel.").queue();

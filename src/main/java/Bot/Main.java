@@ -41,7 +41,7 @@ public class Main {
         ).setMemberCachePolicy(MemberCachePolicy.ALL).disableCache(
                         CacheFlag.STICKER,
                         CacheFlag.EMOJI
-                );
+        );
 
         builder.addEventListeners( new Listener(), new VoiceManager() );
 
@@ -67,6 +67,9 @@ public class Main {
                             new OptionData(OptionType.STRING,"name","The Channel Name."),
                             new OptionData(OptionType.BOOLEAN, "auto-rename", "If the channel should auto renamed based off of user activities."),
                             new OptionData(OptionType.BOOLEAN, "locked", "If people are allowed to join the channel.")
+                    ),
+                    new SubcommandData("give-key","Give a key to another member.").addOptions(
+                            new OptionData(OptionType.USER,"member","Who you want to give a key.")
                     )
             ).queue();
 
