@@ -7,8 +7,13 @@ import Game.Minecraft.Username;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.dv8tion.jda.api.entities.channel.unions.ChannelUnion;
+import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -16,6 +21,8 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -177,9 +184,9 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
         if (!e.getAuthor().isBot()) {
+            String content = e.getMessage().getContentStripped();
             switch (e.getMessage().getType()) {
                 case DEFAULT -> {
-                    String content = e.getMessage().getContentStripped();
                     if (content.startsWith(COMMAND_SIGN.toLowerCase()) || content.startsWith(COMMAND_SIGN.toUpperCase())) {
                         String[] messageSplit = content.split("\\s+");
                         String command = messageSplit[0].substring(COMMAND_SIGN.length());
@@ -271,9 +278,40 @@ public class Listener extends ListenerAdapter {
                     }
                 }
                 case INLINE_REPLY -> {
-                    switch (e.getChannel().getName()) {
-                        case "Table" -> {
-                            //Casino.addBet(e.getMessage());
+                    if (content.startsWith("repost to")) {
+                        e.getMessage().getMentions().getChannels().get(0).getIdLong();
+                        GuildChannel targetChannel = e.getMessage().getMentions().getChannels().get(0);
+                        Message messageToBeMoved = null;
+                        switch (targetChannel.getType()) {
+                            case TEXT -> {
+                                messageToBeMoved = e.getMessage().getReferencedMessage();
+                                e.getGuild().getTextChannelById(targetChannel.getId()).sendMessage(
+                                        "***Message from " + messageToBeMoved.getAuthor().getAsMention() + " has been moved from " + e.getChannel().getAsMention() + " to this channel.***\n"
+                                                + messageToBeMoved.getContentRaw()
+                                ).queue();
+                            }
+                            case GUILD_PUBLIC_THREAD, GUILD_PRIVATE_THREAD -> {
+                                messageToBeMoved = e.getMessage().getReferencedMessage();
+                                e.getGuild().getThreadChannelById(targetChannel.getId()).sendMessage(
+                                        "***Message from " + messageToBeMoved.getAuthor().getAsMention() + " has been moved from " + e.getChannel().getAsMention() + " to this channel.***\n"
+                                                + messageToBeMoved.getContentRaw()
+                                ).queue();
+                            }
+                            case VOICE -> {
+                                messageToBeMoved = e.getMessage().getReferencedMessage();
+                                e.getGuild().getVoiceChannelById(targetChannel.getId()).sendMessage(
+                                        "***Message from " + messageToBeMoved.getAuthor().getAsMention() + " has been moved from " + e.getChannel().getAsMention() + " to this channel.***\n"
+                                                + messageToBeMoved.getContentRaw()
+                                ).queue();
+                            }
+                            default -> {
+                                log.error("Unknown Channel Type -> " + targetChannel.getType());
+                                e.getMessage().delete().queue();
+                            }
+                        }
+                        if (messageToBeMoved != null) {
+                            messageToBeMoved.delete().queue();
+                            e.getMessage().delete().queue();
                         }
                     }
                 }
