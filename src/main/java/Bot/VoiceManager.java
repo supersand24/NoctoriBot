@@ -245,19 +245,29 @@ public class VoiceManager extends ListenerAdapter {
         return "The music was stopped.";
     }
 
+    public static void pauseMusic(Guild guild) {
+        MusicManager manager = getMusicManager(guild);
+        manager.audioPlayer.setPaused(!manager.audioPlayer.isPaused());
+        log.info("Music in " + guild.getName() + " was paused.");
+    }
+
     public static void botJoinVoice(VoiceChannel channel) {
         AudioManager audioManager = channel.getGuild().getAudioManager();
         audioManager.openAudioConnection(channel);
+        MusicManager musicManager = getMusicManager(channel.getGuild());
         channel.sendMessage("Jukebox Controls").addActionRow(
-                Button.primary("music-play","Play"),
-                Button.secondary("music-skip","Skip"),
-                Button.danger("music-stop","Stop")
-        ).queue();
+                Button.primary("music-pause", "Pause/Unpause"),
+                Button.secondary("music-skip", "Skip Song")
+        ).addActionRow(
+                Button.primary("music-addToQueue","Add to Queue"),
+                Button.danger("music-stop","Stop Music")
+        ).queue(message -> musicManager.currentJukeboxControlPanel = message );
     }
 
     public static void botLeaveVoice(Guild guild) {
+        MusicManager musicManager = getMusicManager(guild);
         AudioManager audioManager = guild.getAudioManager();
-        audioManager.closeAudioConnection();
+        musicManager.currentJukeboxControlPanel.delete().queue(unused -> audioManager.closeAudioConnection());
     }
 
     @Override
@@ -468,6 +478,9 @@ class MusicManager {
     public final AudioPlayer audioPlayer;
     public final TrackScheduler scheduler;
     private final AudioPlayerSendHandler sendHandler;
+
+    public VoiceChannel currentMusicChannel;
+    public Message currentJukeboxControlPanel;
 
     public MusicManager(AudioPlayerManager manager) {
         this.audioPlayer = manager.createPlayer();

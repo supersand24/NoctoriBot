@@ -138,10 +138,17 @@ public class Listener extends ListenerAdapter {
                                         e.reply("I am currently being used by another member.").queue();
                                     }
                                 }
+                                case "pause" -> {
+                                    if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
+                                        VoiceManager.pauseMusic(e.getGuild());
+                                    } else {
+                                        e.reply("I am currently being used by another member.").queue();
+                                    }
+                                }
                             }
                         } else {
                             switch (e.getSubcommandName()) {
-                                case "leave","stop","queue" -> e.reply("I am not in a voice channel.").queue();
+                                case "leave","stop","queue","pause" -> e.reply("I am not in a voice channel.").queue();
                                 case "join" -> {
                                     AudioChannelUnion channelUnion = memberVoiceState.getChannel();
                                     if (channelUnion.getType() == ChannelType.STAGE) { e.reply("Sorry this does not work with Stage Channels at the moment.").queue(); return; }
@@ -267,15 +274,16 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onButtonInteraction(ButtonInteractionEvent e) {
         switch (e.getComponentId()) {
-            case "music-play" -> {
+            case "music-addToQueue" -> {
                 TextInput url = TextInput.create("url", "URL", TextInputStyle.SHORT)
                         .setPlaceholder("www.youtube.com/???")
                         .build();
-                Modal modal = Modal.create("music-play", "Play Music")
+                Modal modal = Modal.create("music-addToQueue", "Play Music")
                         .addActionRow(url)
                         .build();
                 e.replyModal(modal).queue();
             }
+            case "music-pause" -> VoiceManager.pauseMusic(e.getGuild());
             case "music-skip" -> e.reply(VoiceManager.skipTrack(e.getGuild())).setEphemeral(true).queue();
             case "music-stop" -> e.reply(VoiceManager.stopAndClear(e.getGuild(),true)).setEphemeral(true).queue();
         }
@@ -284,7 +292,7 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onModalInteraction(ModalInteractionEvent e) {
         switch (e.getModalId()) {
-            case "music-play" -> {
+            case "music-addToQueue" -> {
                 String url = e.getValue("url").getAsString();
                 VoiceManager.loadAndPlay(url,e.getGuild());
                 e.reply("Music added to queue.").setEphemeral(true).queue();
