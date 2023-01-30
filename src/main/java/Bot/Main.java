@@ -4,10 +4,12 @@ import Command.Profile;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
@@ -62,15 +64,30 @@ public class Main {
             Profile.init();
 
             //Voice Channel Command
-            getNoctori().upsertCommand("vc","Voice Channel Commands").addSubcommands(
+            getNoctori().upsertCommand("vc", "Voice Channel Commands").addSubcommandGroups(
+                    new SubcommandGroupData("music", "Music Related Commands").addSubcommands(
+                            new SubcommandData("join", "Make me join the Voice Channel."),
+                            new SubcommandData("leave", "Make me leave the Voice Channel."),
+                            new SubcommandData("play", "Play the music.").addOptions(
+                                    new OptionData(OptionType.STRING, "url", "A link to the music.").setRequired(true)
+                            ),
+                            new SubcommandData("stop", "Stop the music").addOptions(
+                                    new OptionData(OptionType.BOOLEAN, "clear-queue", "If true, clears the queue.")
+                            ),
+                            new SubcommandData("skip", "Skip the current song."),
+                            new SubcommandData("queue", "Shows the queued up songs.")
+                    )
+            ).addSubcommands(
+                    new SubcommandData("give-key", "Give a key to a member.").addOptions(
+                            new OptionData(OptionType.USER, "member", "Who you want to give a key.")
+                    ),
                     new SubcommandData("edit","Edits your current Voice Channel, if you are a Voice Channel Admin.").addOptions(
-                            new OptionData(OptionType.STRING,"name","The Channel Name."),
+                            new OptionData(OptionType.STRING, "name", "The Channel Name."),
                             new OptionData(OptionType.BOOLEAN, "auto-rename", "If the channel should auto renamed based off of user activities."),
                             new OptionData(OptionType.BOOLEAN, "locked", "If people are allowed to join the channel.")
                     ),
-                    new SubcommandData("give-key","Give a key to another member.").addOptions(
-                            new OptionData(OptionType.USER,"member","Who you want to give a key.")
-                    )
+                    new SubcommandData("lock", "Quickly lock the channel."),
+                    new SubcommandData("auto-rename", "Quickly toggle auto renaming.")
             ).queue();
 
             //Dev Command
