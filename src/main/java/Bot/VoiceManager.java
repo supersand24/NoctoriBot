@@ -1,5 +1,15 @@
 package Bot;
 
+import Music.AudioPlayerSendHandler;
+import Music.TrackScheduler;
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
@@ -7,10 +17,10 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.StageChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
-import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.events.channel.update.ChannelUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.events.session.SessionRecreateEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateActivitiesEvent;
@@ -20,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -33,6 +45,9 @@ public class VoiceManager extends ListenerAdapter {
 
     private long AUTO_VOICE_NEW_CHANNEL_ID = 984491055636443216L;
     private long AUTO_VOICE_CATEGORY_ID = 964543894832427018L;
+
+    public final static Map<Long, GuildManager> musicManagers = new HashMap<>();
+    private final static AudioPlayerManager audioPlayerManager = new DefaultAudioPlayerManager();
 
     protected final static EnumSet<Permission> adminAllowedPermissions = EnumSet.of(
             Permission.MANAGE_CHANNEL,      Permission.CREATE_INSTANT_INVITE,
@@ -107,6 +122,48 @@ public class VoiceManager extends ListenerAdapter {
         System.out.println("--------------------------------------");
         log.info("Auto Voice Manager Ready!");
 
+        //Music Setup
+        AudioSourceManagers.registerRemoteSources(audioPlayerManager);
+        log.info("Music Manager Ready!");
+    }
+
+    public static GuildManager getMusicManager(Guild guild) {
+        return musicManagers.computeIfAbsent(guild.getIdLong(), (guildId) -> {
+            final GuildManager guildManager = new GuildManager(audioPlayerManager);
+            guild.getAudioManager().setSendingHandler(guildManager.getSendHandler());
+            return guildManager;
+        });
+    }
+
+    public static void loadAndPlay(String trackURL, SlashCommandInteractionEvent e) {
+        final GuildManager musicManager = getMusicManager(e.getGuild());
+
+        audioPlayerManager.loadItemOrdered(musicManager, trackURL, new AudioLoadResultHandler() {
+            @Override
+            public void trackLoaded(AudioTrack audioTrack) {
+                musicManager.scheduler.queue(audioTrack);
+                EmbedBuilder embed = new EmbedBuilder();
+                embed.setTitle(audioTrack.getInfo().title);
+                embed.setAuthor(audioTrack.getInfo().author);
+                embed.addField("Length", String.valueOf(Duration.ofMillis(audioTrack.getDuration())),true);
+                e.replyEmbeds(embed.build()).queue();
+            }
+
+            @Override
+            public void playlistLoaded(AudioPlaylist audioPlaylist) {
+
+            }
+
+            @Override
+            public void noMatches() {
+
+            }
+
+            @Override
+            public void loadFailed(FriendlyException e) {
+
+            }
+        });
     }
 
     @Override
@@ -308,6 +365,25 @@ public class VoiceManager extends ListenerAdapter {
 
         voiceChannel.sendMessageEmbeds(embed.build()).queue();
     }
+}
+
+class GuildManager {
+
+    public final AudioPlayer audioPlayer;
+    public final TrackScheduler scheduler;
+    private final AudioPlayerSendHandler sendHandler;
+
+    public GuildManager(AudioPlayerManager manager) {
+        this.audioPlayer = manager.createPlayer();
+        this.scheduler = new TrackScheduler(this.audioPlayer);
+        this.audioPlayer.addListener(this.scheduler);
+        this.sendHandler = new AudioPlayerSendHandler(this.audioPlayer);
+    }
+
+    public AudioPlayerSendHandler getSendHandler() {
+        return sendHandler;
+    }
+
 }
 
 class NoctoriVoiceChannel {

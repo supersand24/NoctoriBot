@@ -5,10 +5,7 @@ import Game.BlackOps3.Manager;
 import Game.Minecraft.GetOnlinePlayers;
 import Game.Minecraft.Username;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.IMentionable;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
@@ -22,6 +19,7 @@ import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -74,7 +72,7 @@ public class Listener extends ListenerAdapter {
                         }
                     }
                 }
-            }
+            }/*
             case "vc" -> {
                 if (e.getMember().getVoiceState().inAudioChannel()) {
                     NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getMember().getVoiceState().getChannel().getIdLong());
@@ -117,6 +115,90 @@ public class Listener extends ListenerAdapter {
                     }
                 } else {
                     e.reply("You are not in a voice channel.").queue();
+                }
+            }*/
+            case "vc" -> {
+                Member member = e.getMember();
+                //TODO Move outside of vc switch when merged back into main.
+                if (member == null) { log.error("Unknown member using slash command. /" + e.getFullCommandName()); e.reply("There was an error.").setEphemeral(true).queue(); return; }
+                GuildVoiceState memberVoiceState = member.getVoiceState();
+                if (memberVoiceState == null) { e.reply("You need to be in a voice channel!").setEphemeral(true).queue(); return; }
+                switch (e.getSubcommandGroup()) {
+                    case "music" -> {
+                        Member botMember = e.getGuild().getMemberById(e.getJDA().getSelfUser().getId());
+                        GuildVoiceState botVoiceState = botMember.getVoiceState();
+                        if (botVoiceState == null) { log.error("Bot has a null Voice State."); e.reply("There was an error."); return; }
+                        if (botVoiceState.inAudioChannel()) {
+                            switch (e.getSubcommandName()) {
+                                case "join" -> e.reply("I am already in a voice channel.").queue();
+                                case "leave" -> {
+                                    AudioManager audioManager = e.getGuild().getAudioManager();
+                                    audioManager.closeAudioConnection();
+                                    e.reply("Left the Voice Channel.").setEphemeral(true).queue();
+                                }
+                                case "play" -> {
+                                    if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
+                                        VoiceManager.loadAndPlay("https://www.youtube.com/watch?v=hjoELWlYmQ4", e);
+                                    } else {
+                                        //TODO Add a way to pay to hijack the jukebox.
+                                        //Server Boosters would get a discount on hijack price.
+                                        //You can pay to have higher access and a huger discount, would depend on how many times the bot has been hijacked.
+                                        e.reply("I am currently being used by another member.").queue();
+                                    }
+                                }
+                            }
+                        } else {
+                            switch (e.getSubcommandName()) {
+                                case "join" -> {
+                                    AudioManager audioManager = Main.getNoctori().getAudioManager();
+                                    audioManager.openAudioConnection(memberVoiceState.getChannel());
+                                    e.reply("Joined the Voice Channel.").setEphemeral(true).queue();
+                                }
+                                case "leave" -> e.reply("I am not in a voice channel.").queue();
+                                case "play" -> {
+                                    AudioManager audioManager = Main.getNoctori().getAudioManager();
+                                    audioManager.openAudioConnection(memberVoiceState.getChannel());
+                                    e.reply("Joined the Voice Channel.").setEphemeral(true).queue();
+                                    VoiceManager.loadAndPlay("https://www.youtube.com/watch?v=hjoELWlYmQ4", e);
+                                }
+                            }
+                        }
+                    }
+                    default -> {
+                        NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getMember().getVoiceState().getChannel().getIdLong());
+                        if (vc == null) { e.reply("You are not in a voice channel that can be managed.").queue(); return; }
+                        switch (e.getSubcommandName()) {
+                            case "give-key" -> {
+                                Member giftMember = e.getOption("member").getAsMember();
+                                if (giftMember == null) {e.reply("That user does not appear to be a member in the server.").setEphemeral(true).queue(); return; }
+                                AudioChannelUnion channel = e.getMember().getVoiceState().getChannel();
+                                if (channel == null) {
+                                    e.reply("You are not in a voice channel!").setEphemeral(true).queue();
+                                } else {
+                                    VoiceManager.giveChannelKey(channel.getIdLong(),e.getMember(),member);
+                                    member.getUser().openPrivateChannel().queue(privateChannel -> {
+                                        channel.createInvite().queue( invite -> {
+                                            privateChannel.sendMessage(e.getMember().getEffectiveName() + " has gifted you a key for the " + e.getMember().getVoiceState().getChannel().getName() + " voice channel.\n" +
+                                                    invite.getUrl()).queue();
+                                        });
+                                    });
+                                    e.reply(member.getEffectiveName() + " has received a key.").setEphemeral(true).queue();
+                                }
+                            }
+                            case "edit" -> {
+                                for (OptionMapping option : e.getOptions()) {
+                                    switch (option.getName()) {
+                                        case "name" -> vc.setName(option.getAsString());
+                                        case "auto-rename" -> vc.setAutoRename(option.getAsBoolean());
+                                        case "locked" -> vc.setLocked(option.getAsBoolean());
+                                    }
+                                }
+                                e.reply("Edits applied.").setEphemeral(true).queue();
+                            }
+                            case "lock" -> vc.setLocked(!vc.isLocked());
+                            case "auto-rename" -> vc.setAutoRename(!vc.getAutoRename());
+                        }
+                    }
                 }
             }
             case "dev" -> {
