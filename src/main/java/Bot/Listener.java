@@ -8,6 +8,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.entities.channel.unions.ChannelUnion;
@@ -136,8 +137,7 @@ public class Listener extends ListenerAdapter {
                             switch (e.getSubcommandName()) {
                                 case "join" -> e.reply("I am already in a voice channel.").queue();
                                 case "leave" -> {
-                                    AudioManager audioManager = e.getGuild().getAudioManager();
-                                    audioManager.closeAudioConnection();
+                                    VoiceManager.botLeaveVoice(e.getGuild());
                                     e.reply("Left the Voice Channel.").setEphemeral(true).queue();
                                 }
                                 case "play" -> {
@@ -156,16 +156,15 @@ public class Listener extends ListenerAdapter {
                                 }
                                 case "stop" -> {
                                     if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
-                                        GuildManager manager = VoiceManager.getMusicManager(e.getGuild());
-                                        manager.scheduler.player.stopTrack();
                                         if (e.getOption("clear-queue") == null) {
-                                            manager.scheduler.queue.clear();
+                                            VoiceManager.stopAndClear(e.getGuild(),true);
                                             e.reply("I stopped playing music, and cleared the queue.").queue();
                                         } else {
                                             if (e.getOption("clear-queue").getAsBoolean()) {
-                                                manager.scheduler.queue.clear();
+                                                VoiceManager.stopAndClear(e.getGuild(),true);
                                                 e.reply("I stopped playing music, and cleared the queue.").queue();
                                             } else {
+                                                VoiceManager.stopAndClear(e.getGuild(),false);
                                                 e.reply("I stopped playing music.").queue();
                                             }
                                         }
@@ -175,36 +174,14 @@ public class Listener extends ListenerAdapter {
                                 }
                                 case "skip" -> {
                                     if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
-                                        GuildManager manager = VoiceManager.getMusicManager(e.getGuild());
-                                        if (manager.audioPlayer.getPlayingTrack() == null) {
-                                            e.reply("There is not track currently playing.").queue();
-                                            return;
-                                        }
-                                        manager.scheduler.nextTrack();
-                                        e.reply("Skipped the current track.").queue();
+                                        e.reply(VoiceManager.skipTrack(e.getGuild())).queue();
                                     } else {
                                         e.reply("I am currently being used by another member.").queue();
                                     }
                                 }
                                 case "queue" -> {
                                     if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
-                                        GuildManager manager = VoiceManager.getMusicManager(e.getGuild());
-                                        final BlockingQueue<AudioTrack> queue = manager.scheduler.queue;
-                                        if (queue.isEmpty()) { e.reply("The queue is empty").queue(); return; }
-
-                                        final int trackCount = Math.min(queue.size(), 22);
-                                        final List<AudioTrack> trackList = new ArrayList<>(queue);
-                                        EmbedBuilder embed = new EmbedBuilder();
-                                        embed.setTitle("Current Queue");
-                                        embed.setDescription("Songs in queue: " + trackList.size());
-                                        for (int i = 0; i < trackCount; i++) {
-                                            embed.addField("#" + i + " | " + trackList.get(i).getInfo().title,trackList.get(i).getInfo().author,true);
-                                        }
-
-                                        if (trackList.size() > trackCount) {
-                                            embed.addField("And " + (trackList.size() - trackCount), "more...",false);
-                                        }
-                                        e.replyEmbeds(embed.build()).queue();
+                                        e.reply(VoiceManager.getQueue(e.getGuild())).queue();
                                     } else {
                                         e.reply("I am currently being used by another member.").queue();
                                     }
@@ -214,13 +191,15 @@ public class Listener extends ListenerAdapter {
                             switch (e.getSubcommandName()) {
                                 case "leave","stop","queue" -> e.reply("I am not in a voice channel.").queue();
                                 case "join" -> {
-                                    AudioManager audioManager = Main.getNoctori().getAudioManager();
-                                    audioManager.openAudioConnection(memberVoiceState.getChannel());
+                                    AudioChannelUnion channelUnion = memberVoiceState.getChannel();
+                                    if (channelUnion.getType() == ChannelType.STAGE) { e.reply("Sorry this does not work with Stage Channels at the moment.").queue(); return; }
+                                    VoiceManager.botJoinVoice(channelUnion.asVoiceChannel());
                                     e.reply("Joined the Voice Channel.").setEphemeral(true).queue();
                                 }
                                 case "play" -> {
-                                    AudioManager audioManager = Main.getNoctori().getAudioManager();
-                                    audioManager.openAudioConnection(memberVoiceState.getChannel());
+                                    AudioChannelUnion channelUnion = memberVoiceState.getChannel();
+                                    if (channelUnion.getType() == ChannelType.STAGE) { e.reply("Sorry this does not work with Stage Channels at the moment.").queue(); return; }
+                                    VoiceManager.botJoinVoice(channelUnion.asVoiceChannel());
                                     String search = e.getOption("url").getAsString();
                                     if (!VoiceManager.isUrl(search)) {
                                         search = "ytsearch:" + search;
