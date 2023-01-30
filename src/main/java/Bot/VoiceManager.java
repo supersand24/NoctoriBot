@@ -24,6 +24,7 @@ import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.events.session.SessionRecreateEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateActivitiesEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import org.jetbrains.annotations.NotNull;
@@ -187,6 +188,46 @@ public class VoiceManager extends ListenerAdapter {
         });
     }
 
+    public static void loadAndPlay(String trackURL, Guild guild) {
+        final MusicManager musicManager = getMusicManager(guild);
+
+        audioPlayerManager.loadItemOrdered(musicManager, trackURL, new AudioLoadResultHandler() {
+            @Override
+            public void trackLoaded(AudioTrack audioTrack) {
+                musicManager.scheduler.queue(audioTrack);
+                log.info("Now playing " + audioTrack.getInfo().title + " by " + audioTrack.getInfo().author + " in ");
+                EmbedBuilder embed = new EmbedBuilder();
+                embed.setTitle(audioTrack.getInfo().title);
+                embed.setAuthor(audioTrack.getInfo().author);
+            }
+
+            @Override
+            public void playlistLoaded(AudioPlaylist audioPlaylist) {
+                final List<AudioTrack> tracks = audioPlaylist.getTracks();
+                log.info("Loaded a playlist in ");
+                EmbedBuilder embed = new EmbedBuilder();
+                embed.setTitle(audioPlaylist.getName() + " loaded " + tracks.size() + " songs.");
+                final int trackCount = Math.min(tracks.size(), 22);
+                for (int i = 0; i < trackCount; i++) {
+                    embed.addField(tracks.get(i).getInfo().title,tracks.get(i).getInfo().author,true);
+                }
+                for (AudioTrack track : tracks) {
+                    musicManager.scheduler.queue(track);
+                }
+            }
+
+            @Override
+            public void noMatches() {
+                log.error("No Matches.");
+            }
+
+            @Override
+            public void loadFailed(FriendlyException e) {
+                log.error("Load Failed.");
+            }
+        });
+    }
+
     public static String skipTrack(Guild guild) {
         MusicManager manager = getMusicManager(guild);
         if (manager.audioPlayer.getPlayingTrack() == null) { return "Nothing is currently playing."; }
@@ -213,16 +254,22 @@ public class VoiceManager extends ListenerAdapter {
         return string.toString();
     }
 
-    public static void stopAndClear(Guild guild, boolean clearQueue) {
+    public static String stopAndClear(Guild guild, boolean clearQueue) {
         MusicManager manager = getMusicManager(guild);
         manager.scheduler.player.stopTrack();
         log.info("The current song was stopped.");
         if (clearQueue) { manager.scheduler.queue.clear(); log.info("The queue for " + guild.getName() + " was cleared."); }
+        return "The music was stopped.";
     }
 
     public static void botJoinVoice(VoiceChannel channel) {
         AudioManager audioManager = channel.getGuild().getAudioManager();
         audioManager.openAudioConnection(channel);
+        channel.sendMessage("Jukebox Controls").addActionRow(
+                Button.primary("music-play","Play"),
+                Button.secondary("music-skip","Skip"),
+                Button.danger("music-stop","Stop")
+        ).queue();
     }
 
     public static void botLeaveVoice(Guild guild) {

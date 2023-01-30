@@ -4,33 +4,29 @@ import Command.*;
 import Game.BlackOps3.Manager;
 import Game.Minecraft.GetOnlinePlayers;
 import Game.Minecraft.Username;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
-import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
-import net.dv8tion.jda.api.entities.channel.unions.ChannelUnion;
-import net.dv8tion.jda.api.entities.channel.unions.MessageChannelUnion;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.managers.AudioManager;
-import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 
 public class Listener extends ListenerAdapter {
@@ -77,51 +73,7 @@ public class Listener extends ListenerAdapter {
                         }
                     }
                 }
-            }/*
-            case "vc" -> {
-                if (e.getMember().getVoiceState().inAudioChannel()) {
-                    NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getMember().getVoiceState().getChannel().getIdLong());
-                    if (vc == null) {
-                        e.reply("You are not in a voice channel that can be managed.").queue();
-                    } else {
-                        switch (e.getSubcommandName()) {
-                            case "give-key" -> {
-                                Member member = e.getOption("member").getAsMember();
-                                if (member == null) {
-                                    e.reply("That user does not appear to be a member in the server.").setEphemeral(true).queue();
-                                } else {
-                                    AudioChannelUnion channel = e.getMember().getVoiceState().getChannel();
-                                    if (channel == null) {
-                                        e.reply("You are not in a voice channel!").setEphemeral(true).queue();
-                                    } else {
-                                        VoiceManager.giveChannelKey(channel.getIdLong(),e.getMember(),member);
-                                        member.getUser().openPrivateChannel().queue(privateChannel -> {
-                                            channel.createInvite().queue( invite -> {
-                                                privateChannel.sendMessage(e.getMember().getEffectiveName() + " has gifted you a key for the " + e.getMember().getVoiceState().getChannel().getName() + " voice channel.\n" +
-                                                        invite.getUrl()).queue();
-                                            });
-                                            //privateChannel.sendMessage(e.getMember().getEffectiveName() + " has gifted you a key for the " + e.getMember().getVoiceState().getChannel().getName() + " voice channel.").queue();
-                                        });
-                                        e.reply(member.getEffectiveName() + " has received a key.").setEphemeral(true).queue();
-                                    }
-                                }
-                            }
-                            case "edit" -> {
-                                for (OptionMapping option : e.getOptions()) {
-                                    switch (option.getName()) {
-                                        case "name" -> vc.setName(option.getAsString());
-                                        case "auto-rename" -> vc.setAutoRename(option.getAsBoolean());
-                                        case "locked" -> vc.setLocked(option.getAsBoolean());
-                                    }
-                                }
-                                e.reply("Edits applied.").setEphemeral(true).queue();
-                            }
-                        }
-                    }
-                } else {
-                    e.reply("You are not in a voice channel.").queue();
-                }
-            }*/
+            }
             case "vc" -> {
                 Member member = e.getMember();
                 //TODO Move outside of vc switch when merged back into main.
@@ -308,6 +260,34 @@ public class Listener extends ListenerAdapter {
                         e.reply(sb.toString()).setEphemeral(true).queue();
                     }
                 }
+            }
+        }
+    }
+
+    @Override
+    public void onButtonInteraction(ButtonInteractionEvent e) {
+        switch (e.getComponentId()) {
+            case "music-play" -> {
+                TextInput url = TextInput.create("url", "URL", TextInputStyle.SHORT)
+                        .setPlaceholder("www.youtube.com/???")
+                        .build();
+                Modal modal = Modal.create("music-play", "Play Music")
+                        .addActionRow(url)
+                        .build();
+                e.replyModal(modal).queue();
+            }
+            case "music-skip" -> e.reply(VoiceManager.skipTrack(e.getGuild())).setEphemeral(true).queue();
+            case "music-stop" -> e.reply(VoiceManager.stopAndClear(e.getGuild(),true)).setEphemeral(true).queue();
+        }
+    }
+
+    @Override
+    public void onModalInteraction(ModalInteractionEvent e) {
+        switch (e.getModalId()) {
+            case "music-play" -> {
+                String url = e.getValue("url").getAsString();
+                VoiceManager.loadAndPlay(url,e.getGuild());
+                e.reply("Music added to queue.").setEphemeral(true).queue();
             }
         }
     }
