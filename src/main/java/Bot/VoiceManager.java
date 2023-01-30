@@ -30,6 +30,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -135,6 +137,15 @@ public class VoiceManager extends ListenerAdapter {
         });
     }
 
+    public static boolean isUrl(String string) {
+        try {
+            new URI(string);
+            return true;
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
     public static void loadAndPlay(String trackURL, SlashCommandInteractionEvent e) {
         final GuildManager musicManager = getMusicManager(e.getGuild());
 
@@ -145,13 +156,19 @@ public class VoiceManager extends ListenerAdapter {
                 EmbedBuilder embed = new EmbedBuilder();
                 embed.setTitle(audioTrack.getInfo().title);
                 embed.setAuthor(audioTrack.getInfo().author);
-                embed.addField("Length", String.valueOf(Duration.ofMillis(audioTrack.getDuration())),true);
                 e.replyEmbeds(embed.build()).queue();
             }
 
             @Override
             public void playlistLoaded(AudioPlaylist audioPlaylist) {
-
+                final List<AudioTrack> tracks = audioPlaylist.getTracks();
+                EmbedBuilder embed = new EmbedBuilder();
+                embed.setTitle(audioPlaylist.getName() + " loaded " + tracks.size() + " songs.");
+                for (AudioTrack track : tracks) {
+                    musicManager.scheduler.queue(track);
+                    embed.addField(track.getInfo().title,track.getInfo().author,true);
+                }
+                e.replyEmbeds(embed.build()).queue();
             }
 
             @Override

@@ -67,7 +67,14 @@ public class Main {
                     new SubcommandGroupData("music", "Music Related Commands").addSubcommands(
                             new SubcommandData("join", "Make me join the Voice Channel."),
                             new SubcommandData("leave", "Make me leave the Voice Channel."),
-                            new SubcommandData("play", "Play the music.")
+                            new SubcommandData("play", "Play the music.").addOptions(
+                                    new OptionData(OptionType.STRING, "url", "A link to the music.").setRequired(true)
+                            ),
+                            new SubcommandData("stop", "Stop the music").addOptions(
+                                    new OptionData(OptionType.BOOLEAN, "clear-queue", "If true, clears the queue.")
+                            ),
+                            new SubcommandData("skip", "Skip the current song."),
+                            new SubcommandData("queue", "Shows the queued up songs.")
                     )
             ).addSubcommands(
                     new SubcommandData("give-key", "Give a key to a member.").addOptions(

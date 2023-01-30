@@ -4,6 +4,7 @@ import Command.*;
 import Game.BlackOps3.Manager;
 import Game.Minecraft.GetOnlinePlayers;
 import Game.Minecraft.Username;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -25,7 +26,10 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 
 public class Listener extends ListenerAdapter {
@@ -138,7 +142,11 @@ public class Listener extends ListenerAdapter {
                                 }
                                 case "play" -> {
                                     if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
-                                        VoiceManager.loadAndPlay("https://www.youtube.com/watch?v=hjoELWlYmQ4", e);
+                                        String search = e.getOption("url").getAsString();
+                                        if (!VoiceManager.isUrl(search)) {
+                                            search = "ytsearch:" + search;
+                                        }
+                                        VoiceManager.loadAndPlay(search, e);
                                     } else {
                                         //TODO Add a way to pay to hijack the jukebox.
                                         //Server Boosters would get a discount on hijack price.
@@ -146,20 +154,78 @@ public class Listener extends ListenerAdapter {
                                         e.reply("I am currently being used by another member.").queue();
                                     }
                                 }
+                                case "stop" -> {
+                                    if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
+                                        GuildManager manager = VoiceManager.getMusicManager(e.getGuild());
+                                        manager.scheduler.player.stopTrack();
+                                        if (e.getOption("clear-queue") == null) {
+                                            manager.scheduler.queue.clear();
+                                            e.reply("I stopped playing music, and cleared the queue.").queue();
+                                        } else {
+                                            if (e.getOption("clear-queue").getAsBoolean()) {
+                                                manager.scheduler.queue.clear();
+                                                e.reply("I stopped playing music, and cleared the queue.").queue();
+                                            } else {
+                                                e.reply("I stopped playing music.").queue();
+                                            }
+                                        }
+                                    } else {
+                                        e.reply("I am currently being used by another member.").queue();
+                                    }
+                                }
+                                case "skip" -> {
+                                    if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
+                                        GuildManager manager = VoiceManager.getMusicManager(e.getGuild());
+                                        if (manager.audioPlayer.getPlayingTrack() == null) {
+                                            e.reply("There is not track currently playing.").queue();
+                                            return;
+                                        }
+                                        manager.scheduler.nextTrack();
+                                        e.reply("Skipped the current track.").queue();
+                                    } else {
+                                        e.reply("I am currently being used by another member.").queue();
+                                    }
+                                }
+                                case "queue" -> {
+                                    if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
+                                        GuildManager manager = VoiceManager.getMusicManager(e.getGuild());
+                                        final BlockingQueue<AudioTrack> queue = manager.scheduler.queue;
+                                        if (queue.isEmpty()) { e.reply("The queue is empty").queue(); return; }
+
+                                        final int trackCount = Math.min(queue.size(), 22);
+                                        final List<AudioTrack> trackList = new ArrayList<>(queue);
+                                        EmbedBuilder embed = new EmbedBuilder();
+                                        embed.setTitle("Current Queue");
+                                        embed.setDescription("Songs in queue: " + trackList.size());
+                                        for (int i = 0; i < trackCount; i++) {
+                                            embed.addField("#" + i + " | " + trackList.get(i).getInfo().title,trackList.get(i).getInfo().author,true);
+                                        }
+
+                                        if (trackList.size() > trackCount) {
+                                            embed.addField("And " + (trackList.size() - trackCount), "more...",false);
+                                        }
+                                        e.replyEmbeds(embed.build()).queue();
+                                    } else {
+                                        e.reply("I am currently being used by another member.").queue();
+                                    }
+                                }
                             }
                         } else {
                             switch (e.getSubcommandName()) {
+                                case "leave","stop","queue" -> e.reply("I am not in a voice channel.").queue();
                                 case "join" -> {
                                     AudioManager audioManager = Main.getNoctori().getAudioManager();
                                     audioManager.openAudioConnection(memberVoiceState.getChannel());
                                     e.reply("Joined the Voice Channel.").setEphemeral(true).queue();
                                 }
-                                case "leave" -> e.reply("I am not in a voice channel.").queue();
                                 case "play" -> {
                                     AudioManager audioManager = Main.getNoctori().getAudioManager();
                                     audioManager.openAudioConnection(memberVoiceState.getChannel());
-                                    e.reply("Joined the Voice Channel.").setEphemeral(true).queue();
-                                    VoiceManager.loadAndPlay("https://www.youtube.com/watch?v=hjoELWlYmQ4", e);
+                                    String search = e.getOption("url").getAsString();
+                                    if (!VoiceManager.isUrl(search)) {
+                                        search = "ytsearch:" + search;
+                                    }
+                                    VoiceManager.loadAndPlay(search, e);
                                 }
                             }
                         }
