@@ -153,38 +153,36 @@ public class VoiceManager extends ListenerAdapter {
             @Override
             public void trackLoaded(AudioTrack audioTrack) {
                 musicManager.scheduler.queue(audioTrack);
+
                 log.info("Now playing " + audioTrack.getInfo().title + " by " + audioTrack.getInfo().author + " in ");
+
                 EmbedBuilder embed = new EmbedBuilder();
                 embed.setTitle(audioTrack.getInfo().title);
                 embed.setAuthor(audioTrack.getInfo().author);
+
                 e.replyEmbeds(embed.build()).queue();
             }
 
             @Override
             public void playlistLoaded(AudioPlaylist audioPlaylist) {
                 final List<AudioTrack> tracks = audioPlaylist.getTracks();
+
                 log.info("Loaded a playlist in ");
+
                 EmbedBuilder embed = new EmbedBuilder();
                 embed.setTitle(audioPlaylist.getName() + " loaded " + tracks.size() + " songs.");
                 final int trackCount = Math.min(tracks.size(), 22);
-                for (int i = 0; i < trackCount; i++) {
-                    embed.addField(tracks.get(i).getInfo().title,tracks.get(i).getInfo().author,true);
-                }
-                for (AudioTrack track : tracks) {
-                    musicManager.scheduler.queue(track);
-                }
+                for (int i = 0; i < trackCount; i++) embed.addField(tracks.get(i).getInfo().title,tracks.get(i).getInfo().author,true);
+                for (AudioTrack track : tracks) musicManager.scheduler.queue(track);
+
                 e.replyEmbeds(embed.build()).queue();
             }
 
             @Override
-            public void noMatches() {
-                log.error("No Matches.");
-            }
+            public void noMatches() { log.error("No Matches."); }
 
             @Override
-            public void loadFailed(FriendlyException e) {
-                log.error("Load Failed.");
-            }
+            public void loadFailed(FriendlyException e) { log.error("Load Failed."); }
         });
     }
 
@@ -196,35 +194,20 @@ public class VoiceManager extends ListenerAdapter {
             public void trackLoaded(AudioTrack audioTrack) {
                 musicManager.scheduler.queue(audioTrack);
                 log.info("Now playing " + audioTrack.getInfo().title + " by " + audioTrack.getInfo().author + " in ");
-                EmbedBuilder embed = new EmbedBuilder();
-                embed.setTitle(audioTrack.getInfo().title);
-                embed.setAuthor(audioTrack.getInfo().author);
             }
 
             @Override
             public void playlistLoaded(AudioPlaylist audioPlaylist) {
                 final List<AudioTrack> tracks = audioPlaylist.getTracks();
-                log.info("Loaded a playlist in ");
-                EmbedBuilder embed = new EmbedBuilder();
-                embed.setTitle(audioPlaylist.getName() + " loaded " + tracks.size() + " songs.");
-                final int trackCount = Math.min(tracks.size(), 22);
-                for (int i = 0; i < trackCount; i++) {
-                    embed.addField(tracks.get(i).getInfo().title,tracks.get(i).getInfo().author,true);
-                }
-                for (AudioTrack track : tracks) {
-                    musicManager.scheduler.queue(track);
-                }
+                log.info("Loaded a playlist in " + guild.getName());
+                for (AudioTrack track : tracks) musicManager.scheduler.queue(track);
             }
 
             @Override
-            public void noMatches() {
-                log.error("No Matches.");
-            }
+            public void noMatches() { log.error("No Matches."); }
 
             @Override
-            public void loadFailed(FriendlyException e) {
-                log.error("Load Failed.");
-            }
+            public void loadFailed(FriendlyException e) { log.error("Load Failed."); }
         });
     }
 
@@ -248,9 +231,9 @@ public class VoiceManager extends ListenerAdapter {
             string.append("#").append(i+1).append(" ").append(trackList.get(i).getInfo().title).append(" by ").append(trackList.get(i).getInfo().author).append("\n");
         }
 
-        if (trackList.size() > trackCount) {
-            string.append("And ").append(trackList.size() - trackCount).append(" more...```");
-        }
+        if (trackList.size() > trackCount) string.append("And ").append(trackList.size() - trackCount).append(" more...```");
+        else string.append("```");
+
         return string.toString();
     }
 
