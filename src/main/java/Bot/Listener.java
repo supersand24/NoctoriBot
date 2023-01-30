@@ -93,7 +93,11 @@ public class Listener extends ListenerAdapter {
                                     } else {
                                         VoiceManager.giveChannelKey(channel.getIdLong(),e.getMember(),member);
                                         member.getUser().openPrivateChannel().queue(privateChannel -> {
-                                            privateChannel.sendMessage(e.getMember().getEffectiveName() + " has gifted you a key for the " + e.getMember().getVoiceState().getChannel().getName() + " voice channel.").queue();
+                                            channel.createInvite().queue( invite -> {
+                                                privateChannel.sendMessage(e.getMember().getEffectiveName() + " has gifted you a key for the " + e.getMember().getVoiceState().getChannel().getName() + " voice channel.\n" +
+                                                        invite.getUrl()).queue();
+                                            });
+                                            //privateChannel.sendMessage(e.getMember().getEffectiveName() + " has gifted you a key for the " + e.getMember().getVoiceState().getChannel().getName() + " voice channel.").queue();
                                         });
                                         e.reply(member.getEffectiveName() + " has received a key.").setEphemeral(true).queue();
                                     }
