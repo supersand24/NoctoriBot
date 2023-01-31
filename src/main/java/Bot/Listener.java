@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Listener extends ListenerAdapter {
@@ -123,31 +124,10 @@ public class Listener extends ListenerAdapter {
                                         e.reply("I am currently being used by another member.").queue();
                                     }
                                 }
-                                case "skip" -> {
-                                    if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
-                                        e.reply(VoiceManager.skipTrack(e.getGuild())).queue();
-                                    } else {
-                                        e.reply("I am currently being used by another member.").queue();
-                                    }
-                                }
-                                case "queue" -> {
-                                    if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
-                                        e.reply(VoiceManager.getQueue(e.getGuild())).queue();
-                                    } else {
-                                        e.reply("I am currently being used by another member.").queue();
-                                    }
-                                }
-                                case "pause" -> {
-                                    if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
-                                        VoiceManager.pauseMusic(e.getGuild());
-                                    } else {
-                                        e.reply("I am currently being used by another member.").queue();
-                                    }
-                                }
                             }
                         } else {
                             switch (e.getSubcommandName()) {
-                                case "leave","stop","queue","pause" -> e.reply("I am not in a voice channel.").queue();
+                                case "leave","stop" -> e.reply("I am not in a voice channel.").queue();
                                 case "join" -> {
                                     AudioChannelUnion channelUnion = memberVoiceState.getChannel();
                                     if (channelUnion.getType() == ChannelType.STAGE) { e.reply("Sorry this does not work with Stage Channels at the moment.").queue(); return; }
@@ -282,9 +262,9 @@ public class Listener extends ListenerAdapter {
                         .build();
                 e.replyModal(modal).queue();
             }
-            case "music-pause" -> VoiceManager.pauseMusic(e.getGuild());
-            case "music-skip" -> e.reply(VoiceManager.skipTrack(e.getGuild())).setEphemeral(true).queue();
-            case "music-stop" -> e.reply(VoiceManager.stopAndClear(e.getGuild(),true)).setEphemeral(true).queue();
+            case "music-pause" -> e.reply(VoiceManager.pauseMusic(e.getGuild())).setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            case "music-skip" -> e.reply(VoiceManager.skipTrack(e.getGuild())).setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            case "music-stop" -> e.reply(VoiceManager.stopAndClear(e.getGuild(),true)).setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
         }
     }
 

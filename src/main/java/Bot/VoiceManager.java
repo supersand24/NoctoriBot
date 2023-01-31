@@ -1,10 +1,7 @@
 package Bot;
 
-import Music.AudioPlayerSendHandler;
 import Music.MusicManager;
-import Music.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
@@ -155,20 +152,22 @@ public class VoiceManager extends ListenerAdapter {
             public void trackLoaded(AudioTrack audioTrack) {
                 musicManager.scheduler.queue(audioTrack);
 
-                log.info("Now playing " + audioTrack.getInfo().title + " by " + audioTrack.getInfo().author + " in ");
+                log.info("Loaded " + audioTrack.getInfo().title + " by " + audioTrack.getInfo().author + " in " + e.getGuild().getName() + ".");
 
                 EmbedBuilder embed = new EmbedBuilder();
                 embed.setTitle(audioTrack.getInfo().title);
                 embed.setAuthor(audioTrack.getInfo().author);
 
                 e.replyEmbeds(embed.build()).setEphemeral(true).queue();
+
+                musicManager.updateJukeboxControlPanel();
             }
 
             @Override
             public void playlistLoaded(AudioPlaylist audioPlaylist) {
                 final List<AudioTrack> tracks = audioPlaylist.getTracks();
 
-                log.info("Loaded a playlist in ");
+                log.info("Loaded a playlist in " + e.getGuild().getName() + ".");
 
                 EmbedBuilder embed = new EmbedBuilder();
                 embed.setTitle(audioPlaylist.getName() + " loaded " + tracks.size() + " songs.");
@@ -177,6 +176,8 @@ public class VoiceManager extends ListenerAdapter {
                 for (AudioTrack track : tracks) musicManager.scheduler.queue(track);
 
                 e.replyEmbeds(embed.build()).setEphemeral(true).queue();
+
+                musicManager.updateJukeboxControlPanel();
             }
 
             @Override
@@ -194,14 +195,18 @@ public class VoiceManager extends ListenerAdapter {
             @Override
             public void trackLoaded(AudioTrack audioTrack) {
                 musicManager.scheduler.queue(audioTrack);
-                log.info("Now playing " + audioTrack.getInfo().title + " by " + audioTrack.getInfo().author + " in ");
+                log.info("Loaded " + audioTrack.getInfo().title + " by " + audioTrack.getInfo().author + " in " + guild.getName() + ".");
+
+                musicManager.updateJukeboxControlPanel();
             }
 
             @Override
             public void playlistLoaded(AudioPlaylist audioPlaylist) {
                 final List<AudioTrack> tracks = audioPlaylist.getTracks();
-                log.info("Loaded a playlist in " + guild.getName());
+                log.info("Loaded a playlist in " + guild.getName() + ".");
                 for (AudioTrack track : tracks) musicManager.scheduler.queue(track);
+
+                musicManager.updateJukeboxControlPanel();
             }
 
             @Override
@@ -246,10 +251,16 @@ public class VoiceManager extends ListenerAdapter {
         return "The music was stopped.";
     }
 
-    public static void pauseMusic(Guild guild) {
+    public static String pauseMusic(Guild guild) {
         MusicManager manager = getMusicManager(guild);
         manager.audioPlayer.setPaused(!manager.audioPlayer.isPaused());
-        log.info("Music in " + guild.getName() + " was paused.");
+        if (manager.audioPlayer.isPaused()) {
+            log.info("Music in " + guild.getName() + " was paused.");
+            return "The music was paused.";
+        } else {
+            log.info("Music in " + guild.getName() + " was unpaused.");
+            return "The music plays on.";
+        }
     }
 
     public static void botJoinVoice(VoiceChannel channel) {

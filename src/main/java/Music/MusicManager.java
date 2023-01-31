@@ -37,17 +37,15 @@ public class MusicManager {
     public void updateJukeboxControlPanel() {
         AudioTrack track = audioPlayer.getPlayingTrack();
         StringBuilder string = new StringBuilder();
-        string.append("`Jukebox Controls and Queue`\n");
-        if (track == null) {
-            string.append(":stop_button: *Nothing currently playing.*\n");
-        } else {
-            string.append(":arrow_forward: **").append(track.getInfo().title).append("** by ").append(track.getInfo().author).append("\n");
+        string.append("```Jukebox Controls and Queue```\n");
+        if (track == null) string.append(":stop_button: *Nothing currently playing.*\n"); else {
+            if (audioPlayer.isPaused()) string.append(":pause_button: "); else string.append(":arrow_forward: ");
+            string.append("__**").append(track.getInfo().title).append("**__ by *").append(track.getInfo().author).append("*\n");
         }
         final List<AudioTrack> trackList = new ArrayList<>(scheduler.queue);
         final int trackCount = Math.min(trackList.size(), 9);
-        for (int i = 0; i < trackCount; i++) {
+        for (int i = 0; i < trackCount; i++)
             string.append(getEmojiFromInt(i + 1)).append(" **").append(trackList.get(i).getInfo().title).append("** by *").append(trackList.get(i).getInfo().author).append("*\n");
-        }
         if (trackList.size() > trackCount)
             string.append(":arrow_down: ").append("And **").append(trackList.size() - trackCount).append("** more...");
         currentJukeboxControlPanel.editMessage(string.toString()).queue();

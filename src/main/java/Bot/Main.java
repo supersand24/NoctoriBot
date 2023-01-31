@@ -72,10 +72,7 @@ public class Main {
                             ),
                             new SubcommandData("stop", "Stop the music").addOptions(
                                     new OptionData(OptionType.BOOLEAN, "clear-queue", "If true, clears the queue.")
-                            ),
-                            new SubcommandData("skip", "Skip the current song."),
-                            new SubcommandData("pause", "Pauses the jukebox."),
-                            new SubcommandData("queue", "Shows the queued up songs.")
+                            )
                     )
             ).addSubcommands(
                     new SubcommandData("give-key", "Give a key to a member.").addOptions(
