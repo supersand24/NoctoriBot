@@ -1,6 +1,7 @@
 package Bot;
 
 import Music.AudioPlayerSendHandler;
+import Music.MusicManager;
 import Music.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -146,7 +147,7 @@ public class VoiceManager extends ListenerAdapter {
         }
     }
 
-    public static void loadAndPlay(String trackURL, SlashCommandInteractionEvent e) {
+    public static void addToQueue(String trackURL, SlashCommandInteractionEvent e) {
         final MusicManager musicManager = getMusicManager(e.getGuild());
 
         audioPlayerManager.loadItemOrdered(musicManager, trackURL, new AudioLoadResultHandler() {
@@ -160,7 +161,7 @@ public class VoiceManager extends ListenerAdapter {
                 embed.setTitle(audioTrack.getInfo().title);
                 embed.setAuthor(audioTrack.getInfo().author);
 
-                e.replyEmbeds(embed.build()).queue();
+                e.replyEmbeds(embed.build()).setEphemeral(true).queue();
             }
 
             @Override
@@ -175,7 +176,7 @@ public class VoiceManager extends ListenerAdapter {
                 for (int i = 0; i < trackCount; i++) embed.addField(tracks.get(i).getInfo().title,tracks.get(i).getInfo().author,true);
                 for (AudioTrack track : tracks) musicManager.scheduler.queue(track);
 
-                e.replyEmbeds(embed.build()).queue();
+                e.replyEmbeds(embed.build()).setEphemeral(true).queue();
             }
 
             @Override
@@ -186,7 +187,7 @@ public class VoiceManager extends ListenerAdapter {
         });
     }
 
-    public static void loadAndPlay(String trackURL, Guild guild) {
+    public static void addToQueue(String trackURL, Guild guild) {
         final MusicManager musicManager = getMusicManager(guild);
 
         audioPlayerManager.loadItemOrdered(musicManager, trackURL, new AudioLoadResultHandler() {
@@ -261,7 +262,7 @@ public class VoiceManager extends ListenerAdapter {
         ).addActionRow(
                 Button.primary("music-addToQueue","Add to Queue"),
                 Button.danger("music-stop","Stop Music")
-        ).queue(message -> musicManager.currentJukeboxControlPanel = message );
+        ).queue(message -> musicManager.setCurrentJukeboxControlPanel(message) );
     }
 
     public static void botLeaveVoice(Guild guild) {
@@ -469,30 +470,6 @@ public class VoiceManager extends ListenerAdapter {
 
         voiceChannel.sendMessageEmbeds(embed.build()).queue();
     }
-}
-
-//For each guild
-//TODO Change this to a general Guild Manager to keep track of Voice Channels too.
-class MusicManager {
-
-    public final AudioPlayer audioPlayer;
-    public final TrackScheduler scheduler;
-    private final AudioPlayerSendHandler sendHandler;
-
-    public VoiceChannel currentMusicChannel;
-    public Message currentJukeboxControlPanel;
-
-    public MusicManager(AudioPlayerManager manager) {
-        this.audioPlayer = manager.createPlayer();
-        this.scheduler = new TrackScheduler(this.audioPlayer);
-        this.audioPlayer.addListener(this.scheduler);
-        this.sendHandler = new AudioPlayerSendHandler(this.audioPlayer);
-    }
-
-    public AudioPlayerSendHandler getSendHandler() {
-        return sendHandler;
-    }
-
 }
 
 class NoctoriVoiceChannel {

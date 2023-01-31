@@ -18,7 +18,6 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
@@ -98,7 +97,7 @@ public class Listener extends ListenerAdapter {
                                         if (!VoiceManager.isUrl(search)) {
                                             search = "ytsearch:" + search;
                                         }
-                                        VoiceManager.loadAndPlay(search, e);
+                                        VoiceManager.addToQueue(search, e);
                                     } else {
                                         //TODO Add a way to pay to hijack the jukebox.
                                         //Server Boosters would get a discount on hijack price.
@@ -163,7 +162,7 @@ public class Listener extends ListenerAdapter {
                                     if (!VoiceManager.isUrl(search)) {
                                         search = "ytsearch:" + search;
                                     }
-                                    VoiceManager.loadAndPlay(search, e);
+                                    VoiceManager.addToQueue(search, e);
                                 }
                             }
                         }
@@ -294,7 +293,7 @@ public class Listener extends ListenerAdapter {
         switch (e.getModalId()) {
             case "music-addToQueue" -> {
                 String url = e.getValue("url").getAsString();
-                VoiceManager.loadAndPlay(url,e.getGuild());
+                VoiceManager.addToQueue(url,e.getGuild());
                 e.reply("Music added to queue.").setEphemeral(true).queue();
             }
         }
