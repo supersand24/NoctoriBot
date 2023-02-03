@@ -149,7 +149,7 @@ public class VoiceManager extends ListenerAdapter {
         audioPlayerManager.loadItemOrdered(musicManager, trackURL, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack audioTrack) {
-                musicManager.scheduler.queue(audioTrack);
+                musicManager.queue(audioTrack);
 
                 log.info("Loaded " + audioTrack.getInfo().title + " by " + audioTrack.getInfo().author + " in " + e.getGuild().getName() + ".");
 
@@ -172,7 +172,7 @@ public class VoiceManager extends ListenerAdapter {
                 embed.setTitle(audioPlaylist.getName() + " loaded " + tracks.size() + " songs.");
                 final int trackCount = Math.min(tracks.size(), 22);
                 for (int i = 0; i < trackCount; i++) embed.addField(tracks.get(i).getInfo().title,tracks.get(i).getInfo().author,true);
-                for (AudioTrack track : tracks) musicManager.scheduler.queue(track);
+                for (AudioTrack track : tracks) musicManager.queue(track);
 
                 e.replyEmbeds(embed.build()).setEphemeral(true).queue();
 
@@ -193,7 +193,7 @@ public class VoiceManager extends ListenerAdapter {
         audioPlayerManager.loadItemOrdered(musicManager, trackURL, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack audioTrack) {
-                musicManager.scheduler.queue(audioTrack);
+                musicManager.queue(audioTrack);
                 log.info("Loaded " + audioTrack.getInfo().title + " by " + audioTrack.getInfo().author + " in " + guild.getName() + ".");
 
                 musicManager.updateJukeboxControlPanel();
@@ -203,7 +203,7 @@ public class VoiceManager extends ListenerAdapter {
             public void playlistLoaded(AudioPlaylist audioPlaylist) {
                 final List<AudioTrack> tracks = audioPlaylist.getTracks();
                 log.info("Loaded a playlist in " + guild.getName() + ".");
-                for (AudioTrack track : tracks) musicManager.scheduler.queue(track);
+                for (AudioTrack track : tracks) musicManager.queue(track);
 
                 musicManager.updateJukeboxControlPanel();
             }
@@ -219,15 +219,15 @@ public class VoiceManager extends ListenerAdapter {
     public static String skipTrack(Guild guild) {
         MusicManager manager = getMusicManager(guild);
         if (manager.audioPlayer.getPlayingTrack() == null) { return "Nothing is currently playing."; }
-        manager.scheduler.nextTrack();
+        manager.nextTrack();
         return "Skipping song...";
     }
 
     public static String stopAndClear(Guild guild, boolean clearQueue) {
         MusicManager manager = getMusicManager(guild);
-        manager.scheduler.player.stopTrack();
+        manager.audioPlayer.stopTrack();
         log.info("The current song was stopped.");
-        if (clearQueue) { manager.scheduler.queue.clear(); log.info("The queue for " + guild.getName() + " was cleared."); }
+        if (clearQueue) { manager.queue.clear(); log.info("The queue for " + guild.getName() + " was cleared."); }
         manager.updateJukeboxControlPanel();
         return "The music was stopped.";
     }
