@@ -139,10 +139,11 @@ public class Listener extends ListenerAdapter {
                                     if (channelUnion.getType() == ChannelType.STAGE) { e.reply("Sorry this does not work with Stage Channels at the moment.").queue(); return; }
                                     VoiceManager.botJoinVoice(channelUnion.asVoiceChannel());
                                     String search = e.getOption("url").getAsString();
-                                    if (!VoiceManager.isUrl(search)) {
-                                        search = "ytsearch:" + search;
+                                    if (VoiceManager.isUrl(search)) {
+                                        VoiceManager.addToQueue(search, e);
+                                    } else {
+                                        VoiceManager.addToQueue("ytsearch:" + search, e);
                                     }
-                                    VoiceManager.addToQueue(search, e);
                                 }
                             }
                         }
@@ -254,11 +255,17 @@ public class Listener extends ListenerAdapter {
     public void onButtonInteraction(ButtonInteractionEvent e) {
         switch (e.getComponentId()) {
             case "music-addToQueue" -> {
-                TextInput url = TextInput.create("url", "URL", TextInputStyle.SHORT)
+                TextInput url = TextInput.create("url", "URL Link", TextInputStyle.SHORT)
                         .setPlaceholder("www.youtube.com/???")
+                        .setRequired(false)
+                        .build();
+                TextInput searchYoutube = TextInput.create("search-youtube","Search on YouTube", TextInputStyle.SHORT)
+                        .setPlaceholder("Radioactive by Imagine Dragons")
+                        .setRequired(false)
                         .build();
                 Modal modal = Modal.create("music-addToQueue", "Play Music")
                         .addActionRow(url)
+                        .addActionRow(searchYoutube)
                         .build();
                 e.replyModal(modal).queue();
             }
@@ -273,8 +280,14 @@ public class Listener extends ListenerAdapter {
         switch (e.getModalId()) {
             case "music-addToQueue" -> {
                 String url = e.getValue("url").getAsString();
-                VoiceManager.addToQueue(url,e.getGuild());
-                e.reply("Music added to queue.").setEphemeral(true).queue();
+                if (url.isEmpty()) {
+                    String searchYoutube = "ytsearch:" + e.getValue("search-youtube").getAsString();
+                    VoiceManager.addToQueue(searchYoutube,e.getGuild());
+                    e.reply("Searching for " + e.getValue("search-youtube").getAsString() + ".");
+                } else {
+                    VoiceManager.addToQueue(url, e.getGuild());
+                    e.reply("Adding " + url + " to queue.").setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+                }
             }
         }
     }

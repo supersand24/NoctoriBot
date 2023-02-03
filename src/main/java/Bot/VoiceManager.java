@@ -34,7 +34,6 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 
 public class VoiceManager extends ListenerAdapter {
@@ -224,36 +223,19 @@ public class VoiceManager extends ListenerAdapter {
         return "Skipping song...";
     }
 
-    public static String getQueue(Guild guild) {
-        MusicManager manager = getMusicManager(guild);
-        final BlockingQueue<AudioTrack> queue = manager.scheduler.queue;
-        if (queue.isEmpty()) { return "The queue is empty."; }
-
-        final int trackCount = Math.min(queue.size(), 9);
-        final List<AudioTrack> trackList = new ArrayList<>(queue);
-        StringBuilder string = new StringBuilder();
-        string.append("**Upcoming Songs**").append(" | *Number of songs in queue: ").append(trackList.size()).append("*\n```");
-        for (int i = 0; i < trackCount; i++) {
-            string.append("#").append(i+1).append(" ").append(trackList.get(i).getInfo().title).append(" by ").append(trackList.get(i).getInfo().author).append("\n");
-        }
-
-        if (trackList.size() > trackCount) string.append("And ").append(trackList.size() - trackCount).append(" more...```");
-        else string.append("```");
-
-        return string.toString();
-    }
-
     public static String stopAndClear(Guild guild, boolean clearQueue) {
         MusicManager manager = getMusicManager(guild);
         manager.scheduler.player.stopTrack();
         log.info("The current song was stopped.");
         if (clearQueue) { manager.scheduler.queue.clear(); log.info("The queue for " + guild.getName() + " was cleared."); }
+        manager.updateJukeboxControlPanel();
         return "The music was stopped.";
     }
 
     public static String pauseMusic(Guild guild) {
         MusicManager manager = getMusicManager(guild);
         manager.audioPlayer.setPaused(!manager.audioPlayer.isPaused());
+        manager.updateJukeboxControlPanel();
         if (manager.audioPlayer.isPaused()) {
             log.info("Music in " + guild.getName() + " was paused.");
             return "The music was paused.";
@@ -273,7 +255,7 @@ public class VoiceManager extends ListenerAdapter {
         ).addActionRow(
                 Button.primary("music-addToQueue","Add to Queue"),
                 Button.danger("music-stop","Stop Music")
-        ).queue(message -> musicManager.setCurrentJukeboxControlPanel(message) );
+        ).queue(musicManager::setCurrentJukeboxControlPanel);
     }
 
     public static void botLeaveVoice(Guild guild) {

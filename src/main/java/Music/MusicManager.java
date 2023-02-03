@@ -37,7 +37,7 @@ public class MusicManager {
     public void updateJukeboxControlPanel() {
         AudioTrack track = audioPlayer.getPlayingTrack();
         StringBuilder string = new StringBuilder();
-        string.append("```Jukebox Controls and Queue```\n");
+        string.append("```Jukebox Controls and Queue```");
         if (track == null) string.append(":stop_button: *Nothing currently playing.*\n"); else {
             if (audioPlayer.isPaused()) string.append(":pause_button: "); else string.append(":arrow_forward: ");
             string.append("__**").append(track.getInfo().title).append("**__ by *").append(track.getInfo().author).append("*\n");
