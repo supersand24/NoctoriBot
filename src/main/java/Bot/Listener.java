@@ -41,9 +41,10 @@ public class Listener extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent e) {
-        switch (e.getName()) {
+        String[] commandSplit = e.getFullCommandName().split("\\s+");
+        switch (commandSplit[0]) {
             case "profile" -> {
-                switch (e.getSubcommandName()) {
+                switch (commandSplit[1]) {
                     case "display" -> {
                         OptionMapping option = e.getOption("member");
                         if (option == null) {
@@ -60,7 +61,7 @@ public class Listener extends ListenerAdapter {
                 }
             }
             case "money" -> {
-                switch (e.getSubcommandName()) {
+                switch (commandSplit[1]) {
                     case "balance" -> e.reply("$" + Var.getMoney(e.getUser())).setEphemeral(true).queue();
                     case "pay" -> {
                         int sentMoney = e.getOption("amount").getAsInt();
@@ -80,13 +81,13 @@ public class Listener extends ListenerAdapter {
                 if (member == null) { log.error("Unknown member using slash command. /" + e.getFullCommandName()); e.reply("There was an error.").setEphemeral(true).queue(); return; }
                 GuildVoiceState memberVoiceState = member.getVoiceState();
                 if (memberVoiceState == null) { e.reply("You need to be in a voice channel!").setEphemeral(true).queue(); return; }
-                switch (e.getSubcommandGroup()) {
+                switch (commandSplit[1]) {
                     case "music" -> {
                         Member botMember = e.getGuild().getMemberById(e.getJDA().getSelfUser().getId());
                         GuildVoiceState botVoiceState = botMember.getVoiceState();
                         if (botVoiceState == null) { log.error("Bot has a null Voice State."); e.reply("There was an error."); return; }
                         if (botVoiceState.inAudioChannel()) {
-                            switch (e.getSubcommandName()) {
+                            switch (commandSplit[2]) {
                                 case "join" -> e.reply("I am already in a voice channel.").queue();
                                 case "leave" -> {
                                     VoiceManager.botLeaveVoice(e.getGuild());
@@ -126,7 +127,7 @@ public class Listener extends ListenerAdapter {
                                 }
                             }
                         } else {
-                            switch (e.getSubcommandName()) {
+                            switch (commandSplit[2]) {
                                 case "leave","stop" -> e.reply("I am not in a voice channel.").queue();
                                 case "join" -> {
                                     AudioChannelUnion channelUnion = memberVoiceState.getChannel();
@@ -148,45 +149,51 @@ public class Listener extends ListenerAdapter {
                             }
                         }
                     }
-                    default -> {
+                    case "lock" -> {
                         NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getMember().getVoiceState().getChannel().getIdLong());
                         if (vc == null) { e.reply("You are not in a voice channel that can be managed.").queue(); return; }
-                        switch (e.getSubcommandName()) {
-                            case "give-key" -> {
-                                Member giftMember = e.getOption("member").getAsMember();
-                                if (giftMember == null) {e.reply("That user does not appear to be a member in the server.").setEphemeral(true).queue(); return; }
-                                AudioChannelUnion channel = e.getMember().getVoiceState().getChannel();
-                                if (channel == null) {
-                                    e.reply("You are not in a voice channel!").setEphemeral(true).queue();
-                                } else {
-                                    VoiceManager.giveChannelKey(channel.getIdLong(),e.getMember(),member);
-                                    member.getUser().openPrivateChannel().queue(privateChannel -> {
-                                        channel.createInvite().queue( invite -> {
-                                            privateChannel.sendMessage(e.getMember().getEffectiveName() + " has gifted you a key for the " + e.getMember().getVoiceState().getChannel().getName() + " voice channel.\n" +
-                                                    invite.getUrl()).queue();
-                                        });
-                                    });
-                                    e.reply(member.getEffectiveName() + " has received a key.").setEphemeral(true).queue();
-                                }
-                            }
-                            case "edit" -> {
-                                for (OptionMapping option : e.getOptions()) {
-                                    switch (option.getName()) {
-                                        case "name" -> vc.setName(option.getAsString());
-                                        case "auto-rename" -> vc.setAutoRename(option.getAsBoolean());
-                                        case "locked" -> vc.setLocked(option.getAsBoolean());
-                                    }
-                                }
-                                e.reply("Edits applied.").setEphemeral(true).queue();
-                            }
-                            case "lock" -> vc.setLocked(!vc.isLocked());
-                            case "auto-rename" -> vc.setAutoRename(!vc.getAutoRename());
+                        vc.setLocked(!vc.isLocked());
+                        e.deferReply();
+                    }
+                    case "auto-rename" -> {
+                        NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getMember().getVoiceState().getChannel().getIdLong());
+                        if (vc == null) { e.reply("You are not in a voice channel that can be managed.").queue(); return; }
+                        vc.setAutoRename(!vc.getAutoRename());
+                        e.reply("Auto Rename was toggled.").queue();
+                    }
+                    case "give-key" -> {
+                        Member giftMember = e.getOption("member").getAsMember();
+                        if (giftMember == null) {e.reply("That user does not appear to be a member in the server.").setEphemeral(true).queue(); return; }
+                        AudioChannelUnion channel = e.getMember().getVoiceState().getChannel();
+                        if (channel == null) {
+                            e.reply("You are not in a voice channel!").setEphemeral(true).queue();
+                        } else {
+                            VoiceManager.giveChannelKey(channel.getIdLong(),e.getMember(),member);
+                            giftMember.getUser().openPrivateChannel().queue(privateChannel -> {
+                                channel.createInvite().queue( invite -> {
+                                    privateChannel.sendMessage(e.getMember().getEffectiveName() + " has gifted you a key for the " + channel.getName() + " voice channel.\n" +
+                                            invite.getUrl()).queue();
+                                });
+                            });
+                            e.reply(giftMember.getEffectiveName() + " has received a key.").setEphemeral(true).queue();
                         }
+                    }
+                    case "edit" -> {
+                        NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getMember().getVoiceState().getChannel().getIdLong());
+                        if (vc == null) { e.reply("You are not in a voice channel that can be managed.").queue(); return; }
+                        for (OptionMapping option : e.getOptions()) {
+                            switch (option.getName()) {
+                                case "name" -> vc.setName(option.getAsString());
+                                case "auto-rename" -> vc.setAutoRename(option.getAsBoolean());
+                                case "locked" -> vc.setLocked(option.getAsBoolean());
+                            }
+                        }
+                        e.reply("Edits applied.").setEphemeral(true).queue();
                     }
                 }
             }
             case "dev" -> {
-                switch (e.getSubcommandName()) {
+                switch (commandSplit[1]) {
                     case "print" -> {
                         switch (e.getOption("object").getAsInt()) {
                             case 0 -> {

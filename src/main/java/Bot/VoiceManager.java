@@ -338,7 +338,10 @@ public class VoiceManager extends ListenerAdapter {
     @Override
     public void onUserUpdateActivities(@NotNull UserUpdateActivitiesEvent e) {
         GuildVoiceState voiceState = e.getMember().getVoiceState();
-        if (voiceState.inAudioChannel()) autoRename(getVoiceChannel(voiceState.getChannel().getIdLong()));
+        if (!voiceState.inAudioChannel()) { return; }
+        NoctoriVoiceChannel vc = getVoiceChannel(voiceState.getChannel().getIdLong());
+        if (vc == null) { log.error(e.getMember().getEffectiveName() + " isn't in a channel that can be renamed. "); return; }
+        autoRename(vc);
     }
 
     @Override
