@@ -161,19 +161,13 @@ public class Manager {
         return leaderboard;
     }
 
-    public static void sendMapLeaderboard(Message message) {
-        String[] messageSplit = message.getContentStripped().split("\\s+");
-        if (messageSplit.length > 1) {
-            for (Map map : Map.values()) {
-                for (int i = 1; i < messageSplit.length; i++) {
-                    if (map.mapName.equalsIgnoreCase(messageSplit[i]) || map.fileName.equalsIgnoreCase(messageSplit[i])) {
-                        message.getChannel().sendMessageEmbeds(parseData(map).getAsEmbed()).queue();
-                        return;
-                    }
-                }
+    public static MessageEmbed getMapLeaderboard(String search) {
+        for (Map map : Map.values()) {
+            if (map.mapName.equalsIgnoreCase(search) || map.fileName.equalsIgnoreCase(search)) {
+                return parseData(map).getAsEmbed();
             }
         }
-        message.reply("I don't see a map name.").queue();
+        return null;
     }
 
     public static Mod getModFromRaw(String str) {

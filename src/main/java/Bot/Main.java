@@ -106,6 +106,19 @@ public class Main {
                     )
             ).queue();
 
+            //Game Specific Commands
+            getNoctori().upsertCommand("game-specific","Game Specific Commands").addSubcommandGroups(
+                    new SubcommandGroupData("bo3", "Black Ops 3 Zombies").addSubcommands(
+                            new SubcommandData("maps", "Sends a link to the maps."),
+                            new SubcommandData("leaderboard", "Shows a leaderboard for a map.").addOptions(
+                                    new OptionData(OptionType.STRING,"map","Map").setRequired(true)
+                            )
+                    )
+            ).queue();
+            //e.getChannel().sendMessage(Manager.getSteamCollectionURL()).queue();
+            //case "bo3" -> Manager.sendMapLeaderboard(e.getMessage());
+
+
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

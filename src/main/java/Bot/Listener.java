@@ -192,6 +192,25 @@ public class Listener extends ListenerAdapter {
                     }
                 }
             }
+            case "game-specific" -> {
+                switch (commandSplit[1]) {
+                    case "bo3" -> {
+                        switch (commandSplit[2]) {
+                            case "maps" -> e.reply(Manager.getSteamCollectionURL()).setEphemeral(true).queue();
+                            case "leaderboard" -> {
+                                String search = e.getOption("map").getAsString();
+                                MessageEmbed leaderboard = Manager.getMapLeaderboard(search);
+                                if (leaderboard == null) {
+                                    e.reply("Could not find a map by that name.").setEphemeral(true).queue();
+                                    log.error("Could not find a map by name: " + search);
+                                    return;
+                                }
+                                e.replyEmbeds(leaderboard).queue();
+                            }
+                        }
+                    }
+                }
+            }
             case "dev" -> {
                 switch (commandSplit[1]) {
                     case "print" -> {
