@@ -302,135 +302,42 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
         if (!e.getAuthor().isBot()) {
+            Bank.daily(e.getMember());
             String content = e.getMessage().getContentStripped();
-            switch (e.getMessage().getType()) {
-                case DEFAULT -> {
-                    if (content.startsWith(COMMAND_SIGN.toLowerCase()) || content.startsWith(COMMAND_SIGN.toUpperCase())) {
-                        String[] messageSplit = content.split("\\s+");
-                        String command = messageSplit[0].substring(COMMAND_SIGN.length());
-                        //Commands that can be used anywhere
-                        switch (command) {
-                            case "balance" -> new Balance(e.getAuthor(),e.getChannel());
-                            case "profile" -> {
-                                if (e.getMessage().getMentions().getUsers().size() > 0) {
-                                    Profile.sendProfile(e.getMessage().getMentions().getUsers().get(0),e.getChannel());
-                                } else {
-                                    Profile.sendProfile(e.getAuthor(),e.getChannel());
-                                }
-                            }
-                            case "setprofile" -> Profile.set(e.getMessage());
-                            case "profilehelp" -> Profile.help(e.getMessage());
-                            case "bo3maps" -> e.getChannel().sendMessage(Manager.getSteamCollectionURL()).queue();
-                            default -> {
-                                switch (e.getChannelType()) {
-                                    case PRIVATE -> {
-                                        log.info("Private Command " + command + " Received!");
-                                        switch (command) {
-                                            case "notification" -> new Notification(e.getAuthor(),e.getChannel());
-                                            //Unknown Command
-                                            default -> e.getMessage().reply("Unknown Command").queue();
-                                        }
-                                    }
-                                    case GUILD_PUBLIC_THREAD, GUILD_PRIVATE_THREAD -> {
-                                        log.info(command + " Received!");
-                                        switch (e.getChannel().getName()) {
-                                            case "Table" -> {
-                                                switch (command) {
-                                                    //case "coinflip", "cf" -> Casino.newGame(e.getThreadChannel(),e.getMember());
-                                                }
-                                            }
-                                        }
-                                    }
-                                    case TEXT -> {
-                                        Bank.daily(e.getMember());
-                                        log.info(command + " Received!");
-                                        switch (e.getChannel().getName()) {
-                                            case "bot_spam" -> {
-                                                switch (command) {
-                                                    case "bo3" -> Manager.sendMapLeaderboard(e.getMessage());
-                                                }
-                                            }
-                                            case "minecraft" -> {
-                                                switch (command) {
-                                                    case "username" -> new Username(e.getMember(), e.getMessage(), messageSplit);
-                                                    case "onlinePlayers" -> new GetOnlinePlayers(e.getMessage());
-                                                }
-                                            }
-                                            case "hoyoverse" -> {
-                                                switch (command) {
-                                                    case "genshin-uid" -> new Genshin(e.getMember(),e.getMessage(),messageSplit);
-                                                }
-                                            }
-                                            case "casino-alpha" -> {
-                                                switch (command) {
-                                                    //case "table" -> Casino.newTable(e.getMessage());
-                                                }
-                                            }
-                                            default -> {
-                                                switch (command) {
-                                                    //Unknown Command
-                                                    case "pay" -> {
-                                                        if (e.getMessage().getMentions().getMembers().size() > 0) {
-                                                            Bank.payMember(Integer.parseInt(messageSplit[1]),e.getMember(), e.getMessage().getMentions().getMembers().get(0));
-                                                            e.getMessage().reply("Payment Successful.").queue();
-                                                        }
-                                                    }
-                                                    default -> e.getMessage().reply("Unknown Command").queue();
-                                                }
-                                            }
-                                        }
-                                    }
-                                    case VOICE -> {
-                                        log.info("Voice Command " + command + " Received!");
-                                        switch (command) {
-                                            //Unknown Command
-                                            case "help" -> VoiceManager.sendHelpEmbed(e.getChannel().asVoiceChannel());
-                                            case "toggleLock" -> VoiceManager.toggleChannelLock(e.getChannel().getIdLong(), e.getMember());
-                                            case "settings" -> VoiceManager.getVoiceChannel(e.getChannel().getIdLong()).sendSettingsEmbed();
-                                            default -> e.getMessage().reply("Unknown Command").queue();
-                                        }
-                                    }
-                                }
-                            }
+            if (e.getMessage().getType() == MessageType.INLINE_REPLY) {
+                if (content.startsWith("repost to")) {
+                    GuildChannel targetChannel = e.getMessage().getMentions().getChannels().get(0);
+                    Message messageToBeMoved = null;
+                    switch (targetChannel.getType()) {
+                        case TEXT -> {
+                            messageToBeMoved = e.getMessage().getReferencedMessage();
+                            e.getGuild().getTextChannelById(targetChannel.getId()).sendMessage(
+                                    "***Message from " + messageToBeMoved.getAuthor().getAsMention() + " has been moved from " + e.getChannel().getAsMention() + " to this channel.***\n"
+                                            + messageToBeMoved.getContentRaw()
+                            ).queue();
                         }
-                    }
-                }
-                case INLINE_REPLY -> {
-                    if (content.startsWith("repost to")) {
-                        e.getMessage().getMentions().getChannels().get(0).getIdLong();
-                        GuildChannel targetChannel = e.getMessage().getMentions().getChannels().get(0);
-                        Message messageToBeMoved = null;
-                        switch (targetChannel.getType()) {
-                            case TEXT -> {
-                                messageToBeMoved = e.getMessage().getReferencedMessage();
-                                e.getGuild().getTextChannelById(targetChannel.getId()).sendMessage(
-                                        "***Message from " + messageToBeMoved.getAuthor().getAsMention() + " has been moved from " + e.getChannel().getAsMention() + " to this channel.***\n"
-                                                + messageToBeMoved.getContentRaw()
-                                ).queue();
-                            }
-                            case GUILD_PUBLIC_THREAD, GUILD_PRIVATE_THREAD -> {
-                                messageToBeMoved = e.getMessage().getReferencedMessage();
-                                e.getGuild().getThreadChannelById(targetChannel.getId()).sendMessage(
-                                        "***Message from " + messageToBeMoved.getAuthor().getAsMention() + " has been moved from " + e.getChannel().getAsMention() + " to this channel.***\n"
-                                                + messageToBeMoved.getContentRaw()
-                                ).queue();
-                            }
-                            case VOICE -> {
-                                messageToBeMoved = e.getMessage().getReferencedMessage();
-                                e.getGuild().getVoiceChannelById(targetChannel.getId()).sendMessage(
-                                        "***Message from " + messageToBeMoved.getAuthor().getAsMention() + " has been moved from " + e.getChannel().getAsMention() + " to this channel.***\n"
-                                                + messageToBeMoved.getContentRaw()
-                                ).queue();
-                            }
-                            default -> {
-                                log.error("Unknown Channel Type -> " + targetChannel.getType());
-                                e.getMessage().delete().queue();
-                            }
+                        case GUILD_PUBLIC_THREAD, GUILD_PRIVATE_THREAD -> {
+                            messageToBeMoved = e.getMessage().getReferencedMessage();
+                            e.getGuild().getThreadChannelById(targetChannel.getId()).sendMessage(
+                                    "***Message from " + messageToBeMoved.getAuthor().getAsMention() + " has been moved from " + e.getChannel().getAsMention() + " to this channel.***\n"
+                                            + messageToBeMoved.getContentRaw()
+                            ).queue();
                         }
-                        if (messageToBeMoved != null) {
-                            messageToBeMoved.delete().queue();
+                        case VOICE -> {
+                            messageToBeMoved = e.getMessage().getReferencedMessage();
+                            e.getGuild().getVoiceChannelById(targetChannel.getId()).sendMessage(
+                                    "***Message from " + messageToBeMoved.getAuthor().getAsMention() + " has been moved from " + e.getChannel().getAsMention() + " to this channel.***\n"
+                                            + messageToBeMoved.getContentRaw()
+                            ).queue();
+                        }
+                        default -> {
+                            log.error("Unknown Channel Type -> " + targetChannel.getType());
                             e.getMessage().delete().queue();
                         }
+                    }
+                    if (messageToBeMoved != null) {
+                        messageToBeMoved.delete().queue();
+                        e.getMessage().delete().queue();
                     }
                 }
             }
