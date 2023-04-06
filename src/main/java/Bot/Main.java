@@ -4,6 +4,7 @@ import Command.Profile;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -115,8 +116,6 @@ public class Main {
                             )
                     )
             ).queue();
-            //e.getChannel().sendMessage(Manager.getSteamCollectionURL()).queue();
-            //case "bo3" -> Manager.sendMapLeaderboard(e.getMessage());
 
 
         } catch (InterruptedException e) {

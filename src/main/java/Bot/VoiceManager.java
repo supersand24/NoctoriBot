@@ -352,7 +352,8 @@ public class VoiceManager extends ListenerAdapter {
                 NoctoriVoiceChannel voiceChannel = channels.get(e.getChannel().getIdLong());
                 voiceChannel.sendMessage("Channel was renamed to `" + e.getNewValue() + "`.").queue();
                 voiceChannel.updateLastRenamed();
-                voiceChannel.setAutoRename(false);
+                //TODO This was causing the AutoRename to turn itself off, after one rename.
+                //voiceChannel.setAutoRename(false);
             }
         }
     }
@@ -385,7 +386,7 @@ public class VoiceManager extends ListenerAdapter {
                     voiceChannel.sendMessage("Channel was automatically renamed to `" + mostCommonKey + "`.").queue();
                     voiceChannel.getVoiceChannel().getManager().setName(mostCommonKey).queue();
                     voiceChannel.updateLastRenamed();
-                    log.info(voiceChannel.getVoiceChannel().getName() + " was automatically renamed to `" + mostCommonKey + "`.");
+                    log.info(voiceChannel.getVoiceChannel().getName() + " was automatically renamed to " + mostCommonKey + ".");
                 }
 
             } else {
