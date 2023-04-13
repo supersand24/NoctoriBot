@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -327,6 +328,17 @@ public class Listener extends ListenerAdapter {
                 VoiceManager.botJoinVoice(channelUnion.asVoiceChannel());
                 e.reply("Joined the Voice Channel.").setEphemeral(true).queue();
             }
+            case "vc-addAdmin" -> {
+                //TODO Pick a random member from the server.
+                TextInput memberSearch = TextInput.create("member", "Search for Member", TextInputStyle.SHORT)
+                        .setPlaceholder("supersand24")
+                        .setRequired(true)
+                        .build();
+                Modal modal = Modal.create("vc-addAdmin", "Add Channel Admin")
+                        .addActionRow(memberSearch)
+                        .build();
+                e.replyModal(modal).queue();
+            }
         }
     }
 
@@ -346,9 +358,20 @@ public class Listener extends ListenerAdapter {
             }
             case "vc-rename" -> {
                 String newName = e.getValue("name").getAsString();
-                if (newName.isEmpty()) e.reply("Not a valid name!");
+                if (newName.isEmpty()) { e.reply("Not a valid name!"); return; }
                 VoiceManager.getVoiceChannel(e.getChannel().getIdLong()).setName(newName);
                 e.reply("It worked!").setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            }
+            case "vc-addAdmin" -> {
+                String memberSearch = e.getValue("member").getAsString();
+                if (memberSearch.isEmpty()) { e.reply("Not a valid name!"); return; }
+                List<Member> foundMembers = Main.getNoctori().getMembersByName(memberSearch, true);
+                if (foundMembers.size() <= 0) {
+                    e.reply("Could not find anyone with that name.").setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+                } else {
+                    VoiceManager.getVoiceChannel(e.getChannel().getIdLong()).addChannelAdmin(foundMembers.get(0));
+                    e.reply("It worked!").setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+                }
             }
         }
     }

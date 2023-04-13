@@ -332,12 +332,13 @@ public class VoiceManager extends ListenerAdapter {
             voiceChannel.upsertPermissionOverride(Main.getNoctori().getPublicRole()).grant(newChannelPermissions).queue();
             voiceChannel.upsertPermissionOverride(member).grant(adminAllowedPermissions).grant(joinChannelPermissions).queue();
             log.info(member.getEffectiveName() + " created a New Voice Channel.");
-            voiceChannel.sendMessage("```Voice Channel Controls```").addActionRow(
+            voiceChannel.sendMessageEmbeds(vc.toEmbed()).addActionRow(
                     Button.primary("vc-lock", "Lock"),
                     Button.secondary("vc-rename", "Rename"),
                     Button.secondary("vc-autoRename", "Auto Rename")
             ).addActionRow(
-                    Button.primary("vc-addMusic", "Add Music")
+                    Button.primary("vc-addMusic", "Add Music"),
+                    Button.success("vc-addAdmin", "Add Admin")
             ).queue(vc::setControlPanel);
         });
 
@@ -511,10 +512,12 @@ class NoctoriVoiceChannel {
 
     public void addChannelAdmin(Member member) {
         channelAdmins.add(member);
+        updateControlPanel();
     }
 
     public void removeChannelAdmin(Member member) {
         channelAdmins.remove(member);
+        updateControlPanel();
     }
 
     public List<Member> getChannelAdmins() {
@@ -581,8 +584,20 @@ class NoctoriVoiceChannel {
         return getVoiceChannel().sendMessage(message);
     }
 
+    protected MessageCreateAction sendMessageEmbeds(MessageEmbed embed) {
+        return getVoiceChannel().sendMessageEmbeds(embed);
+    }
+
     protected void setControlPanel(Message message) {
         this.controlPanel = message;
+    }
+
+    protected void updateControlPanel() {
+        if (controlPanel == null) {
+            sendMessageEmbeds(toEmbed()).queue(this::setControlPanel);
+            return;
+        }
+        controlPanel.editMessageEmbeds(toEmbed()).queue();
     }
 
     protected void delete() {
@@ -601,6 +616,21 @@ class NoctoriVoiceChannel {
         if (!activities.isEmpty())
             embed.addField("Channel Activities", String.join("\n", activities.keySet()), false);
         voiceChannel.sendMessageEmbeds(embed.build()).queue();
+    }
+
+    protected MessageEmbed toEmbed() {
+        EmbedBuilder embed = new EmbedBuilder();
+
+        embed.setTitle(getName());
+        embed.setDescription("Voice Channel Controls");
+
+        if (autoRename) { embed.addField("Auto Rename", "On", true); } else { embed.addField("Auto Rename", "Off", true); }
+        if (locked) { embed.addField("Locked", "Yes", true); } else { embed.addField("Locked", "No", true); }
+        embed.addField("", "", true);
+
+        embed.addField("Channel Admins", getChannelAdmins().stream().map(Member::getEffectiveName).collect(Collectors.joining("\n")), false);
+
+        return embed.build();
     }
 
     @Override
