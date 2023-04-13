@@ -298,6 +298,35 @@ public class Listener extends ListenerAdapter {
             case "music-pause" -> e.reply(VoiceManager.pauseMusic(e.getGuild())).setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "music-skip" -> e.reply(VoiceManager.skipTrack(e.getGuild())).setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "music-stop" -> e.reply(VoiceManager.stopAndClear(e.getGuild(),true)).setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            case "vc-lock" -> {
+                NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getChannel().getIdLong());
+                if (vc == null) { e.reply("Sorry! That can not be done.").setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS)); return; }
+                vc.setLocked(!vc.isLocked());
+                e.reply("It worked!").setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            }
+            case "vc-rename" -> {
+                TextInput rename = TextInput.create("name", "New Channel Name", TextInputStyle.SHORT)
+                        .setPlaceholder("Vibing")
+                        .setRequired(true)
+                        .build();
+                Modal modal = Modal.create("vc-rename", "Rename Channel")
+                        .addActionRow(rename)
+                        .build();
+                e.replyModal(modal).queue();
+            }
+            case "vc-autoRename" -> {
+                NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getChannel().getIdLong());
+                if (vc == null) { e.reply("Sorry! That can not be done.").setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS)); return; }
+                vc.setAutoRename(!vc.getAutoRename());
+                e.reply("It worked!").setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            }
+            case "vc-addMusic" -> {
+                GuildVoiceState memberVoiceState = e.getMember().getVoiceState();
+                AudioChannelUnion channelUnion = memberVoiceState.getChannel();
+                if (channelUnion.getType() == ChannelType.STAGE) { e.reply("Sorry this does not work with Stage Channels at the moment.").queue(); return; }
+                VoiceManager.botJoinVoice(channelUnion.asVoiceChannel());
+                e.reply("Joined the Voice Channel.").setEphemeral(true).queue();
+            }
         }
     }
 
@@ -314,6 +343,12 @@ public class Listener extends ListenerAdapter {
                     VoiceManager.addToQueue(url, e.getGuild());
                     e.reply("Adding " + url + " to queue.").setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
                 }
+            }
+            case "vc-rename" -> {
+                String newName = e.getValue("name").getAsString();
+                if (newName.isEmpty()) e.reply("Not a valid name!");
+                VoiceManager.getVoiceChannel(e.getChannel().getIdLong()).setName(newName);
+                e.reply("It worked!").setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             }
         }
     }

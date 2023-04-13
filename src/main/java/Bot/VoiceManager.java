@@ -326,11 +326,19 @@ public class VoiceManager extends ListenerAdapter {
         if (stageChannel.getIdLong() != AUTO_VOICE_NEW_CHANNEL_ID) return;
 
         stageChannel.getParentCategory().createVoiceChannel("Vibing").setPosition(0).setNSFW(false).queue(voiceChannel -> {
-            channels.put(voiceChannel.getIdLong(), new NoctoriVoiceChannel(voiceChannel, member));
+            NoctoriVoiceChannel vc = new NoctoriVoiceChannel(voiceChannel, member);
+            channels.put(voiceChannel.getIdLong(), vc);
             Main.getNoctori().moveVoiceMember(member, voiceChannel).queue();
             voiceChannel.upsertPermissionOverride(Main.getNoctori().getPublicRole()).grant(newChannelPermissions).queue();
             voiceChannel.upsertPermissionOverride(member).grant(adminAllowedPermissions).grant(joinChannelPermissions).queue();
             log.info(member.getEffectiveName() + " created a New Voice Channel.");
+            voiceChannel.sendMessage("```Voice Channel Controls```").addActionRow(
+                    Button.primary("vc-lock", "Lock"),
+                    Button.secondary("vc-rename", "Rename"),
+                    Button.secondary("vc-autoRename", "Auto Rename")
+            ).addActionRow(
+                    Button.primary("vc-addMusic", "Add Music")
+            ).queue(vc::setControlPanel);
         });
 
     }
@@ -473,6 +481,7 @@ class NoctoriVoiceChannel {
 
     final VoiceChannel voiceChannel;
     Member creator;
+    Message controlPanel;
 
     final List<Member> channelAdmins = new ArrayList<>();
 
@@ -517,7 +526,14 @@ class NoctoriVoiceChannel {
     }
 
     protected void setAutoRename(boolean autoRename) {
-        this.autoRename = autoRename;
+        if (autoRename != this.autoRename) {
+            this.autoRename = autoRename;
+            if (autoRename) {
+                sendMessage("This channel will now `auto rename`.").queue();
+            } else {
+                sendMessage("This channel will now `not auto rename`.").queue();
+            }
+        }
     }
 
     public boolean getAutoRename() {
@@ -563,6 +579,10 @@ class NoctoriVoiceChannel {
 
     protected MessageCreateAction sendMessage(String message) {
         return getVoiceChannel().sendMessage(message);
+    }
+
+    protected void setControlPanel(Message message) {
+        this.controlPanel = message;
     }
 
     protected void delete() {
