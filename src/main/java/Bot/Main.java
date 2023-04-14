@@ -6,7 +6,9 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
@@ -115,6 +117,11 @@ public class Main {
                                     new OptionData(OptionType.STRING,"map","Map").setRequired(true)
                             )
                     )
+            ).queue();
+
+            //Context Menus
+            getNoctori().updateCommands().addCommands(
+                    Commands.context(Command.Type.USER, "Make Channel Admin")
             ).queue();
 
 

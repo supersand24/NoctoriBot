@@ -23,6 +23,8 @@ import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.events.session.SessionRecreateEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateActivitiesEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
@@ -89,7 +91,7 @@ public class VoiceManager extends ListenerAdapter {
                     break;
                 }
 
-                //Needs reworking.
+                //TODO Needs reworking.
                 NoctoriVoiceChannel av = new NoctoriVoiceChannel(vc);
                 for (Member member : vc.getMembers()) {
                     PermissionOverride perm = vc.getPermissionOverride(member);
@@ -269,15 +271,15 @@ public class VoiceManager extends ListenerAdapter {
 
         // Make sure the channel type is in a Voice Channel, not a Stage Channel or etc.
         if (audioChannel.getType() != ChannelType.VOICE) {
-            log.error(commander.getEffectiveName() + " tried to add the jukebox while not in a Voice Channel. | ChannelType=" + audioChannel.getType());
-            return "You can only do this in a normal voice channel!";
+            log.error(commander.getEffectiveName() + " tried to add the jukebox while to a non Voice Channel. | ChannelType=" + audioChannel.getType());
+            return "The voice channel you are in is not able to have a Jukebox!";
         }
 
         // Get NoctoriVoiceChannel from the connected Voice Channel.
         NoctoriVoiceChannel vc = getVoiceChannel(audioChannel.getIdLong());
         if (vc == null) {
-            log.error(commander.getEffectiveName() + " tried to add the jukebox, on a non compatible channel.");
-            return "This channel can not have the jukebox.";
+            log.error(commander.getEffectiveName() + " tried to add the Jukebox, on a non compatible channel.");
+            return "This channel can not have the Jukebox.";
         }
 
         // Check if Channel Admin.
@@ -523,8 +525,47 @@ public class VoiceManager extends ListenerAdapter {
         return hashMap;
     }
 
+    //TODO Return a message if the Channel was not a Voice Channel
     public static NoctoriVoiceChannel getVoiceChannel(long channelId) {
         return channels.get(channelId);
+    }
+
+    public static String addChannelAdmin(Member commander, Member newChannelAdmin) {
+        // Make sure the VOICE_STATE flag is enabled.
+        if (commander.getVoiceState() == null) {
+            log.error(commander.getEffectiveName() + " attempted to add a channel admin, but bot is missing a flag.");
+            return "Sorry this could not be done, please see an admin.";
+        }
+
+        // Check if the commander is connected to a voice channel.
+        AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
+        if (audioChannel == null) {
+            log.error(commander.getEffectiveName() + " tried to toggle a channel lock while not in a voice channel.");
+            return "You are not connected to a voice channel!";
+        }
+
+        // Make sure the channel type is in a Voice Channel, not a Stage Channel or etc.
+        if (audioChannel.getType() != ChannelType.VOICE) {
+            log.error(commander.getEffectiveName() + " tried to add a Channel Admin to a non Voice Channel. | ChannelType=" + audioChannel.getType());
+            return "The voice channel you are in is not able to have Channel Admins!";
+        }
+
+        // Get NoctoriVoiceChannel from the connected voice channel.
+        NoctoriVoiceChannel vc = getVoiceChannel(audioChannel.getIdLong());
+        if (vc == null) {
+            log.error(commander.getEffectiveName() + " tried to add a Channel Admin, on a non compatible channel.");
+            return "The voice channel you are in is not able to have Channel Admins!";
+        }
+
+        // If commander is a channel admin, toggle the channel lock.
+        if (vc.channelAdmins.contains(commander)) {
+            vc.addChannelAdmin(newChannelAdmin);
+            log.info(commander.getEffectiveName() + " made " + newChannelAdmin.getEffectiveName() + " a channel admin.");
+            return newChannelAdmin.getEffectiveName() + " was made a Channel Admin";
+        } else {
+            log.info("Blocked " + commander.getEffectiveName() + " from adding a Channel Admin, since they are not a Channel Admin.");
+            return "You must be a `Channel Admin` to add other Channel Admins.";
+        }
     }
 
     /**
@@ -655,6 +696,7 @@ class NoctoriVoiceChannel {
     final VoiceChannel voiceChannel;
     Member creator;
     Message controlPanel;
+    final List<LayoutComponent> controlPanelButtons = new ArrayList<>();
 
     final List<Member> channelAdmins = new ArrayList<>();
 
