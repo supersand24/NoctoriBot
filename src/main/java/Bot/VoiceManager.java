@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.StageChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.events.channel.update.ChannelUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -449,11 +450,54 @@ public class VoiceManager extends ListenerAdapter {
         return channels.get(channelId);
     }
 
-    public static void toggleChannelLock(long channelId, Member commandAuthor) {
-        NoctoriVoiceChannel vc = getVoiceChannel(channelId);
-        if (vc == null) return;
-        if (vc.channelAdmins.contains(commandAuthor)) {
-            vc.setLocked(!vc.isLocked());
+    /**
+     Toggles the lock status of a voice channel if the commanding user is a channel admin.
+     If the commander is not in a voice channel or the voice channel is not a NoctoriVoiceChannel, the method logs an error message and returns an error message for the commander.
+     Otherwise, the method sets the lock status of the NoctoriVoiceChannel object based on the current status and returns a notification string.
+     @param commander the Member changing the lock status.
+     @return a notification string indicating whether the channel was locked or unlocked, or an error message indicating why the channel could not be locked or unlocked.
+     */
+    public static String toggleChannelLock(Member commander) {
+        // Make sure the VOICE_STATE flag is enabled.
+        if (commander.getVoiceState() == null) {
+            log.error(commander.getEffectiveName() + " attempted to toggle a channel lock, but bot is missing a flag.");
+            return "Sorry this could not be done, please see an admin.";
+        }
+
+        // Check if the commander is connected to a voice channel.
+        AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
+        if (audioChannel == null) {
+            log.error(commander.getEffectiveName() + " tried to toggle a channel lock while not in a voice channel.");
+            return "You are not connected to a voice channel!";
+        }
+
+        // Make sure the channel type is in a Voice Channel, not a Stage Channel or etc.
+        if (audioChannel.getType() != ChannelType.VOICE) {
+            log.error(commander.getEffectiveName() + " tried to toggle a channel lock while not in a Voice Channel. | ChannelType=" + audioChannel.getType());
+            return "You can only do this in a voice channel!";
+        }
+
+        // Get NoctoriVoiceChannel from the connected voice channel.
+        NoctoriVoiceChannel vc = getVoiceChannel(audioChannel.getIdLong());
+        if (vc == null) {
+            log.error(commander.getEffectiveName() + " tried to toggle a channel lock, on a non compatible channel.");
+            return "This channel can not be locked/unlocked.";
+        }
+
+        // If commander is a channel admin, toggle the channel lock.
+        if (vc.channelAdmins.contains(commander)) {
+            if (vc.isLocked()) {
+                vc.setLocked(false);
+                log.info(commander.getEffectiveName() + " unlocked " + vc.getName() + ".");
+                return "Channel was locked.";
+            } else {
+                vc.setLocked(true);
+                log.info(commander.getEffectiveName() + " locked " + vc.getName() + ".");
+                return "Channel was unlocked.";
+            }
+        } else {
+            log.info("Blocked " + commander.getEffectiveName() + " from toggling a channel lock, since they are not a channel admin.");
+            return "You must be a Channel Admin to do this!";
         }
     }
 
