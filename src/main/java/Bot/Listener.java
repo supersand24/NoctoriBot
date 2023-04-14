@@ -309,12 +309,7 @@ public class Listener extends ListenerAdapter {
                         ).build()
                 ).queue();
             }
-            case "vc-autoRename" -> {
-                NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getChannel().getIdLong());
-                if (vc == null) { e.reply("Sorry! That can not be done.").setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS)); return; }
-                vc.setAutoRename(!vc.getAutoRename());
-                e.reply("It worked!").setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
-            }
+            case "vc-autoRename" -> e.reply(VoiceManager.toggleAutoRename(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "vc-addMusic" -> {
                 GuildVoiceState memberVoiceState = e.getMember().getVoiceState();
                 AudioChannelUnion channelUnion = memberVoiceState.getChannel();

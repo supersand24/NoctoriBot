@@ -474,7 +474,7 @@ public class VoiceManager extends ListenerAdapter {
         // Make sure the channel type is in a Voice Channel, not a Stage Channel or etc.
         if (audioChannel.getType() != ChannelType.VOICE) {
             log.error(commander.getEffectiveName() + " tried to toggle a channel lock while not in a Voice Channel. | ChannelType=" + audioChannel.getType());
-            return "You can only do this in a voice channel!";
+            return "You can only do this in a normal voice channel!";
         }
 
         // Get NoctoriVoiceChannel from the connected voice channel.
@@ -496,8 +496,59 @@ public class VoiceManager extends ListenerAdapter {
                 return "Channel was unlocked.";
             }
         } else {
-            log.info("Blocked " + commander.getEffectiveName() + " from toggling a channel lock, since they are not a channel admin.");
-            return "You must be a Channel Admin to do this!";
+            log.info("Blocked " + commander.getEffectiveName() + " from toggling a Channel Lock, since they are not a Channel Admin.");
+            return "You must be a `Channel Admin` to lock/unlock the Channel";
+        }
+    }
+
+    /**
+     Toggles the auto rename status of a voice channel if the commanding user is a channel admin.
+     If the commander is not in a voice channel or the voice channel is not a NoctoriVoiceChannel, the method logs an error message and returns an error message for the commander.
+     Otherwise, the method sets the auto rename status of the NoctoriVoiceChannel object based on the current status and returns a notification string.
+     @param commander the Member changing the lock status.
+     @return a notification string indicating whether the channel auto rename was turned on or off, or an error message indicating why the channel could not be locked or unlocked.
+     */
+    public static String toggleAutoRename(Member commander) {
+        // Make sure the VOICE_STATE flag is enabled.
+        if (commander.getVoiceState() == null) {
+            log.error(commander.getEffectiveName() + " attempted to toggle auto voice rename, but bot is missing a flag.");
+            return "Sorry this could not be done, please see an admin.";
+        }
+
+        // Check if the commander is connected to a voice channel.
+        AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
+        if (audioChannel == null) {
+            log.error(commander.getEffectiveName() + " tried to toggle auto voice rename while not in a voice channel.");
+            return "You are not connected to a voice channel!";
+        }
+
+        // Make sure the channel type is in a Voice Channel, not a Stage Channel or etc.
+        if (audioChannel.getType() != ChannelType.VOICE) {
+            log.error(commander.getEffectiveName() + " tried to toggle auto voice rename while not in a Voice Channel. | ChannelType=" + audioChannel.getType());
+            return "You can only do this in a normal voice channel!";
+        }
+
+        // Get NoctoriVoiceChannel from the connected voice channel.
+        NoctoriVoiceChannel vc = getVoiceChannel(audioChannel.getIdLong());
+        if (vc == null) {
+            log.error(commander.getEffectiveName() + " tried to toggle auto voice rename, on a non compatible channel.");
+            return "This channel can not auto rename.";
+        }
+
+        // If commander is a channel admin, toggle the channel lock.
+        if (vc.channelAdmins.contains(commander)) {
+            if (vc.getAutoRename()) {
+                vc.setAutoRename(false);
+                log.info(commander.getEffectiveName() + " turned off Auto Rename for " + vc.getName() + ".");
+                return "Channel was Auto Rename was turned On.";
+            } else {
+                vc.setAutoRename(true);
+                log.info(commander.getEffectiveName() + " turned on Auto Renamed for " + vc.getName() + ".");
+                return "Channel was Auto Rename was turned Off.";
+            }
+        } else {
+            log.info("Blocked " + commander.getEffectiveName() + " from toggling Auto Voice Rename, since they are not a Channel Admin.");
+            return "You must be a `Channel Admin` to change the Auto Rename mode!";
         }
     }
 
