@@ -2,11 +2,8 @@ package Bot;
 
 import Command.*;
 import Game.BlackOps3.Manager;
-import Game.Minecraft.GetOnlinePlayers;
-import Game.Minecraft.Username;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
@@ -89,17 +86,11 @@ public class Listener extends ListenerAdapter {
                         if (botVoiceState == null) { log.error("Bot has a null Voice State."); e.reply("There was an error."); return; }
                         if (botVoiceState.inAudioChannel()) {
                             switch (commandSplit[2]) {
-                                case "join" -> e.reply("I am already in a voice channel.").queue();
-                                case "leave" -> {
-                                    VoiceManager.botLeaveVoice(e.getGuild());
-                                    e.reply("Left the Voice Channel.").setEphemeral(true).queue();
-                                }
+                                case "join" -> e.reply("I am already in a voice channel.").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+                                case "leave" -> e.reply(VoiceManager.removeJukebox(member)).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
                                 case "play" -> {
                                     if (botVoiceState.getChannel().getIdLong() == memberVoiceState.getChannel().getIdLong()) {
                                         String search = e.getOption("url").getAsString();
-                                        if (!VoiceManager.isUrl(search)) {
-                                            search = "ytsearch:" + search;
-                                        }
                                         VoiceManager.addToQueue(search, e);
                                     } else {
                                         //TODO Add a way to pay to hijack the jukebox.
@@ -129,22 +120,13 @@ public class Listener extends ListenerAdapter {
                             }
                         } else {
                             switch (commandSplit[2]) {
-                                case "leave","stop" -> e.reply("I am not in a voice channel.").queue();
-                                case "join" -> {
-                                    AudioChannelUnion channelUnion = memberVoiceState.getChannel();
-                                    if (channelUnion.getType() == ChannelType.STAGE) { e.reply("Sorry this does not work with Stage Channels at the moment.").queue(); return; }
-                                    VoiceManager.botJoinVoice(channelUnion.asVoiceChannel());
-                                    e.reply("Joined the Voice Channel.").setEphemeral(true).queue();
-                                }
+                                case "leave","stop" -> e.reply("I am not in a voice channel.").queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+                                case "join" -> e.reply(VoiceManager.addJukebox(member)).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
                                 case "play" -> {
-                                    AudioChannelUnion channelUnion = memberVoiceState.getChannel();
-                                    if (channelUnion.getType() == ChannelType.STAGE) { e.reply("Sorry this does not work with Stage Channels at the moment.").queue(); return; }
-                                    VoiceManager.botJoinVoice(channelUnion.asVoiceChannel());
+                                    VoiceManager.addJukebox(member);
                                     String search = e.getOption("url").getAsString();
                                     if (VoiceManager.isUrl(search)) {
                                         VoiceManager.addToQueue(search, e);
-                                    } else {
-                                        VoiceManager.addToQueue("ytsearch:" + search, e);
                                     }
                                 }
                             }
@@ -305,13 +287,7 @@ public class Listener extends ListenerAdapter {
                 ).queue();
             }
             case "vc-autoRename" -> e.reply(VoiceManager.toggleAutoRename(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
-            case "vc-addMusic" -> {
-                GuildVoiceState memberVoiceState = e.getMember().getVoiceState();
-                AudioChannelUnion channelUnion = memberVoiceState.getChannel();
-                if (channelUnion.getType() == ChannelType.STAGE) { e.reply("Sorry this does not work with Stage Channels at the moment.").queue(); return; }
-                VoiceManager.botJoinVoice(channelUnion.asVoiceChannel());
-                e.reply("Joined the Voice Channel.").setEphemeral(true).queue();
-            }
+            case "vc-addMusic" -> e.reply(VoiceManager.addJukebox(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "vc-addAdmin" -> {
                 //TODO Pick a random member from the server.
                 TextInput memberSearch = TextInput.create("member", "Search for Member", TextInputStyle.SHORT)

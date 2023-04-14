@@ -246,23 +246,100 @@ public class VoiceManager extends ListenerAdapter {
         }
     }
 
-    public static void botJoinVoice(VoiceChannel channel) {
-        AudioManager audioManager = channel.getGuild().getAudioManager();
-        audioManager.openAudioConnection(channel);
-        MusicManager musicManager = getMusicManager(channel.getGuild());
-        channel.sendMessage("Jukebox Controls").addActionRow(
-                Button.primary("music-pause", "Pause/Unpause"),
-                Button.secondary("music-skip", "Skip Song")
-        ).addActionRow(
-                Button.primary("music-addToQueue","Add to Queue"),
-                Button.danger("music-stop","Stop Music")
-        ).queue(musicManager::setCurrentJukeboxControlPanel);
+    /**
+     Adds the guild's jukebox to the connected voice channel if the user is a channel admin and if the channel is compatible with the jukebox.
+     If the channel is not a voice channel, or if the commander does not have the required permissions,
+     an error message will be returned.
+     @param commander the member who is trying to add the jukebox
+     @return A message indicating if the jukebox was successfully added or if an error occurred.
+     */
+    public static String addJukebox(Member commander) {
+        // Make sure the VOICE_STATE flag is enabled.
+        if (commander.getVoiceState() == null) {
+            log.error(commander.getEffectiveName() + " attempted to add the jukebox, but bot is missing a flag.");
+            return "Sorry this could not be done, please see an admin.";
+        }
+
+        // Check if the commander is connected to a voice channel.
+        AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
+        if (audioChannel == null) {
+            log.error(commander.getEffectiveName() + " tried to add the jukebox while not in a voice channel.");
+            return "You are not connected to a voice channel!";
+        }
+
+        // Make sure the channel type is in a Voice Channel, not a Stage Channel or etc.
+        if (audioChannel.getType() != ChannelType.VOICE) {
+            log.error(commander.getEffectiveName() + " tried to add the jukebox while not in a Voice Channel. | ChannelType=" + audioChannel.getType());
+            return "You can only do this in a normal voice channel!";
+        }
+
+        // Get NoctoriVoiceChannel from the connected Voice Channel.
+        NoctoriVoiceChannel vc = getVoiceChannel(audioChannel.getIdLong());
+        if (vc == null) {
+            log.error(commander.getEffectiveName() + " tried to add the jukebox, on a non compatible channel.");
+            return "This channel can not have the jukebox.";
+        }
+
+        // Check if Channel Admin.
+        if (vc.channelAdmins.contains(commander)) {
+            // Join the Voice Channel.
+            AudioManager audioManager = commander.getGuild().getAudioManager();
+            audioManager.openAudioConnection(audioChannel.asVoiceChannel());
+            MusicManager musicManager = getMusicManager(audioChannel.asVoiceChannel().getGuild());
+
+            // Send the Jukebox Control Panel.
+            audioChannel.asVoiceChannel().sendMessage("Jukebox Controls").addActionRow(
+                    Button.primary("music-pause", "Pause/Unpause"),
+                    Button.secondary("music-skip", "Skip Song")
+            ).addActionRow(
+                    Button.primary("music-addToQueue","Add to Queue"),
+                    Button.danger("music-stop","Stop Music")
+            ).queue(musicManager::setCurrentJukeboxControlPanel);
+            return "Joined the Voice Channel.";
+        } else {
+            log.info("Blocked " + commander.getEffectiveName() + " from adding the jukebox, since they are not a Channel Admin.");
+            return "You must be a `Channel Admin` to add the jukebox.";
+        }
     }
 
-    public static void botLeaveVoice(Guild guild) {
-        MusicManager musicManager = getMusicManager(guild);
-        AudioManager audioManager = guild.getAudioManager();
-        musicManager.currentJukeboxControlPanel.delete().queue(unused -> audioManager.closeAudioConnection());
+    /**
+     Removes the guild's jukebox to the connected voice channel if the user is a channel admin and if the channel is compatible with the jukebox.
+     If the channel is not a voice channel, or if the commander does not have the required permissions,
+     an error message will be returned.
+     @param commander the member who is trying to remove the jukebox
+     @return A message indicating if the jukebox was successfully removed or if an error occurred.
+     */
+    public static String removeJukebox(Member commander) {
+        // Make sure the VOICE_STATE flag is enabled.
+        if (commander.getVoiceState() == null) {
+            log.error(commander.getEffectiveName() + " attempted to remove the jukebox, but bot is missing a flag.");
+            return "Sorry this could not be done, please see an admin.";
+        }
+
+        // Check if the commander is connected to a voice channel.
+        AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
+        if (audioChannel == null) {
+            log.error(commander.getEffectiveName() + " tried to remove the jukebox while not in a voice channel.");
+            return "You are not connected to a voice channel!";
+        }
+
+        // Get NoctoriVoiceChannel from the connected Voice Channel.
+        NoctoriVoiceChannel vc = getVoiceChannel(audioChannel.getIdLong());
+        if (vc == null) {
+            log.error(commander.getEffectiveName() + " tried to add the jukebox, on a non compatible channel.");
+            return "This channel can not have the jukebox.";
+        }
+
+        // Check if Channel Admin.
+        if (vc.channelAdmins.contains(commander)) {
+            MusicManager musicManager = getMusicManager(commander.getGuild());
+            AudioManager audioManager = commander.getGuild().getAudioManager();
+            musicManager.currentJukeboxControlPanel.delete().queue(unused -> audioManager.closeAudioConnection());
+            return "Left the Voice Channel.";
+        } else {
+            log.info("Blocked " + commander.getEffectiveName() + " from removing the jukebox, since they are not a Channel Admin.");
+            return "You must be a `Channel Admin` to remove the jukebox.";
+        }
     }
 
     @Override
@@ -338,7 +415,7 @@ public class VoiceManager extends ListenerAdapter {
                     Button.secondary("vc-rename", "Rename"),
                     Button.secondary("vc-autoRename", "Auto Rename")
             ).addActionRow(
-                    Button.primary("vc-addMusic", "Add Music"),
+                    Button.primary("vc-addMusic", "Add Jukebox"),
                     Button.success("vc-addAdmin", "Add Admin")
             ).queue(vc::setControlPanel);
         });
@@ -454,7 +531,7 @@ public class VoiceManager extends ListenerAdapter {
      Toggles the lock status of a voice channel if the commanding user is a channel admin.
      If the commander is not in a voice channel or the voice channel is not a NoctoriVoiceChannel, the method logs an error message and returns an error message for the commander.
      Otherwise, the method sets the lock status of the NoctoriVoiceChannel object based on the current status and returns a notification string.
-     @param commander the Member changing the lock status.
+     @param commander the member who is trying to change the lock status.
      @return a notification string indicating whether the channel was locked or unlocked, or an error message indicating why the channel could not be locked or unlocked.
      */
     public static String toggleChannelLock(Member commander) {
@@ -505,8 +582,8 @@ public class VoiceManager extends ListenerAdapter {
      Toggles the auto rename status of a voice channel if the commanding user is a channel admin.
      If the commander is not in a voice channel or the voice channel is not a NoctoriVoiceChannel, the method logs an error message and returns an error message for the commander.
      Otherwise, the method sets the auto rename status of the NoctoriVoiceChannel object based on the current status and returns a notification string.
-     @param commander the Member changing the lock status.
-     @return a notification string indicating whether the channel auto rename was turned on or off, or an error message indicating why the channel could not be locked or unlocked.
+     @param commander the member who is trying to change the auto rename status.
+     @return a notification string indicating whether the channel auto rename was turned on or off, or an error message indicating why auto rename could not be toggled.
      */
     public static String toggleAutoRename(Member commander) {
         // Make sure the VOICE_STATE flag is enabled.
