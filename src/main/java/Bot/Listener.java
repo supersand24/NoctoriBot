@@ -277,33 +277,37 @@ public class Listener extends ListenerAdapter {
     public void onButtonInteraction(ButtonInteractionEvent e) {
         switch (e.getComponentId()) {
             case "music-addToQueue" -> {
-                TextInput url = TextInput.create("url", "URL Link", TextInputStyle.SHORT)
-                        .setPlaceholder("www.youtube.com/???")
-                        .setRequired(false)
-                        .build();
-                TextInput searchYoutube = TextInput.create("search-youtube","Search on YouTube", TextInputStyle.SHORT)
-                        .setPlaceholder("Radioactive by Imagine Dragons")
-                        .setRequired(false)
-                        .build();
-                Modal modal = Modal.create("music-addToQueue", "Play Music")
-                        .addActionRow(url)
-                        .addActionRow(searchYoutube)
-                        .build();
-                e.replyModal(modal).queue();
+                log.info("Sent Play Music Modal to " + e.getMember().getEffectiveName());
+                e.replyModal(Modal.create("music-addToQueue", "Play Music")
+                        .addActionRow(TextInput.create("url", "URL Link", TextInputStyle.SHORT)
+                                .setPlaceholder("www.youtube.com/???")
+                                .setRequired(false)
+                                .build()
+                        //TODO Re-enable Search Bar
+                        //).addActionRow(TextInput.create("search-youtube","Search on YouTube", TextInputStyle.SHORT)
+                                //TODO Change Placeholder to shuffle to random song.
+                        //        .setPlaceholder("Radioactive by Imagine Dragons")
+                        //        .setRequired(false)
+                        //        .build()
+                        ).build()
+                ).queue();
             }
             case "music-pause" -> e.reply(VoiceManager.pauseMusic(e.getGuild())).setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "music-skip" -> e.reply(VoiceManager.skipTrack(e.getGuild())).setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "music-stop" -> e.reply(VoiceManager.stopAndClear(e.getGuild(),true)).setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "vc-lock" -> e.reply(VoiceManager.toggleChannelLock(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "vc-rename" -> {
-                TextInput rename = TextInput.create("name", "New Channel Name", TextInputStyle.SHORT)
-                        .setPlaceholder("Vibing")
-                        .setRequired(true)
-                        .build();
-                Modal modal = Modal.create("vc-rename", "Rename Channel")
-                        .addActionRow(rename)
-                        .build();
-                e.replyModal(modal).queue();
+                log.info("Sent Rename Channel Modal to " + e.getMember().getEffectiveName());
+                e.replyModal(
+                        Modal.create("vc-rename", "Rename Channel").addActionRow(
+                                TextInput.create("name", "New Channel Name", TextInputStyle.SHORT)
+                                        //TODO Change Placeholder to show what the auto voice would rename to.
+                                        .setPlaceholder("Vibing")
+                                        .setMaxLength(100)
+                                        .setRequired(true)
+                                        .build()
+                        ).build()
+                ).queue();
             }
             case "vc-autoRename" -> {
                 NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getChannel().getIdLong());
