@@ -151,12 +151,7 @@ public class Listener extends ListenerAdapter {
                         }
                     }
                     case "lock" -> e.reply(VoiceManager.toggleChannelLock(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
-                    case "auto-rename" -> {
-                        NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getMember().getVoiceState().getChannel().getIdLong());
-                        if (vc == null) { e.reply("You are not in a voice channel that can be managed.").queue(); return; }
-                        vc.setAutoRename(!vc.getAutoRename());
-                        e.reply("Auto Rename was toggled.").queue();
-                    }
+                    case "auto-rename" -> e.reply(VoiceManager.toggleAutoRename(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
                     case "give-key" -> {
                         Member giftMember = e.getOption("member").getAsMember();
                         if (giftMember == null) {e.reply("That user does not appear to be a member in the server.").setEphemeral(true).queue(); return; }
