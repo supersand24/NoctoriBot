@@ -79,7 +79,7 @@ public class Main {
                     )
             ).addSubcommands(
                     new SubcommandData("give-key", "Give a key to a member.").addOptions(
-                            new OptionData(OptionType.USER, "member", "Who you want to give a key.")
+                            new OptionData(OptionType.USER, "member", "Who you want to give a key.").setRequired(true)
                     ),
                     new SubcommandData("edit","Edits your current Voice Channel, if you are a Voice Channel Admin.").addOptions(
                             new OptionData(OptionType.STRING, "name", "The Channel Name."),

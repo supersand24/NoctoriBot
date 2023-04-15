@@ -670,11 +670,56 @@ public class VoiceManager extends ListenerAdapter {
         }
     }
 
-    public static void giveChannelKey(long channelId, Member commandAuthor, Member member) {
-        NoctoriVoiceChannel vc = getVoiceChannel(channelId);
-        if (vc == null) return;
-        if (vc.channelAdmins.contains(commandAuthor)) {
-            vc.getVoiceChannel().upsertPermissionOverride(member).grant(lockChannelPermissions).queue();
+    /**
+     Gives another user a key to access a voice channel if the commanding user is a channel admin.
+     If the commander is not in a voice channel or the voice channel is not a NoctoriVoiceChannel, the method logs an error message and returns an error message for the commander.
+     Otherwise, the method sends a key to the gift member of the NoctoriVoiceChannel object based on the current status and returns a notification string.
+     @param commander the member who is trying to send a key.
+     @param giftMember the member who is receiving the key.
+     @return a notification string indicating whether the key was sent, or an error message indicating why it could not be sent.
+     */
+    public static String giveChannelKey(Member commander, Member giftMember) {
+        // Make sure the VOICE_STATE flag is enabled.
+        if (commander.getVoiceState() == null) {
+            log.error(commander.getEffectiveName() + " attempted to give a key to " + giftMember.getEffectiveName() + ", but bot is missing a flag.");
+            return "Sorry this could not be done, please see an admin.";
+        }
+
+        // Check if the commander is connected to a voice channel.
+        AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
+        if (audioChannel == null) {
+            log.error(commander.getEffectiveName() + " tried to give a key to " + giftMember.getEffectiveName() + " while not in a voice channel.");
+            return "You are not connected to a voice channel!";
+        }
+
+        // Make sure the channel type is in a Voice Channel, not a Stage Channel or etc.
+        if (audioChannel.getType() != ChannelType.VOICE) {
+            log.error(commander.getEffectiveName() + " tried to to give a key to " + giftMember.getEffectiveName() + " while not in a Voice Channel. | ChannelType=" + audioChannel.getType());
+            return "You can only do this in a normal voice channel!";
+        }
+
+        // Get NoctoriVoiceChannel from the connected voice channel.
+        NoctoriVoiceChannel vc = getVoiceChannel(audioChannel.getIdLong());
+        if (vc == null) {
+            log.error(commander.getEffectiveName() + " tried to to give a key to " + giftMember.getEffectiveName() + ", on a non compatible channel.");
+            return "This channel does not have a lock, therefore no keys.";
+        }
+
+        // If commander is a channel admin, toggle the channel lock.
+        if (vc.channelAdmins.contains(commander)) {
+            vc.getVoiceChannel().upsertPermissionOverride(giftMember).grant(lockChannelPermissions).queue();
+
+            giftMember.getUser().openPrivateChannel().queue(privateChannel -> {
+                audioChannel.createInvite().queue( invite -> {
+                    privateChannel.sendMessage(commander.getAsMention() + " has gifted you a key." +
+                            invite.getUrl()).queue();
+                });
+            });
+
+            return "A key was sent to " + giftMember.getAsMention() + ".";
+        } else {
+            log.info("Blocked " + commander.getEffectiveName() + " from toggling Auto Voice Rename, since they are not a Channel Admin.");
+            return "You must be a `Channel Admin` to give a key!";
         }
     }
 

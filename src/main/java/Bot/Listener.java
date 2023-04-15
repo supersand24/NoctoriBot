@@ -136,23 +136,7 @@ public class Listener extends ListenerAdapter {
                     }
                     case "lock" -> e.reply(VoiceManager.toggleChannelLock(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
                     case "auto-rename" -> e.reply(VoiceManager.toggleAutoRename(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
-                    case "give-key" -> {
-                        Member giftMember = e.getOption("member").getAsMember();
-                        if (giftMember == null) {e.reply("That user does not appear to be a member in the server.").setEphemeral(true).queue(); return; }
-                        AudioChannelUnion channel = e.getMember().getVoiceState().getChannel();
-                        if (channel == null) {
-                            e.reply("You are not in a voice channel!").setEphemeral(true).queue();
-                        } else {
-                            VoiceManager.giveChannelKey(channel.getIdLong(),e.getMember(),member);
-                            giftMember.getUser().openPrivateChannel().queue(privateChannel -> {
-                                channel.createInvite().queue( invite -> {
-                                    privateChannel.sendMessage(e.getMember().getEffectiveName() + " has gifted you a key for the " + channel.getName() + " voice channel.\n" +
-                                            invite.getUrl()).queue();
-                                });
-                            });
-                            e.reply(giftMember.getEffectiveName() + " has received a key.").setEphemeral(true).queue();
-                        }
-                    }
+                    case "give-key" -> e.reply(VoiceManager.giveChannelKey(e.getMember(),e.getOption("member").getAsMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
                     case "edit" -> {
                         NoctoriVoiceChannel vc = VoiceManager.getVoiceChannel(e.getMember().getVoiceState().getChannel().getIdLong());
                         if (vc == null) { e.reply("You are not in a voice channel that can be managed.").queue(); return; }
