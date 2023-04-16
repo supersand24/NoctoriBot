@@ -13,13 +13,17 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.components.selections.EntitySelectMenu;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -275,15 +279,10 @@ public class Listener extends ListenerAdapter {
             case "vc-autoRename" -> e.reply(VoiceManager.toggleAutoRename(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "vc-addMusic" -> e.reply(VoiceManager.addJukebox(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "vc-addAdmin" -> {
-                //TODO Pick a random member from the server.
-                TextInput memberSearch = TextInput.create("member", "Search for Member", TextInputStyle.SHORT)
-                        .setPlaceholder("supersand24")
-                        .setRequired(true)
-                        .build();
-                Modal modal = Modal.create("vc-addAdmin", "Add Channel Admin")
-                        .addActionRow(memberSearch)
-                        .build();
-                e.replyModal(modal).queue();
+                e.reply("Who would you like to add as an channel admin?").addActionRow(
+                                EntitySelectMenu.create("vc-addAdmin", EntitySelectMenu.SelectTarget.USER)
+                                        .build()
+                        ).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(1, TimeUnit.MINUTES));
             }
         }
     }
@@ -325,7 +324,15 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onUserContextInteraction(UserContextInteractionEvent e) {
         switch (e.getName()) {
-            case "Make Channel Admin" -> e.reply(VoiceManager.addChannelAdmin(e.getMember(),e.getTargetMember())).queue();
+            case "Make Channel Admin" -> e.reply(VoiceManager.addChannelAdmin(e.getMember(),e.getTargetMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+        }
+    }
+
+    @Override
+    public void onEntitySelectInteraction(EntitySelectInteractionEvent e) {
+        super.onEntitySelectInteraction(e);
+        switch (e.getComponentId()) {
+            case "vc-addAdmin" -> e.reply(VoiceManager.addChannelAdmin(e.getMember(),e.getMentions().getMembers().get(0))).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
         }
     }
 

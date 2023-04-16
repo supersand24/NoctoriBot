@@ -20,12 +20,14 @@ import net.dv8tion.jda.api.events.channel.update.ChannelUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
+import net.dv8tion.jda.api.events.session.SessionDisconnectEvent;
 import net.dv8tion.jda.api.events.session.SessionRecreateEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateActivitiesEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.selections.EntitySelectMenu;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import org.jetbrains.annotations.NotNull;
@@ -110,6 +112,9 @@ public class VoiceManager extends ListenerAdapter {
                 if (vc.getPermissionOverride(Main.getNoctori().getPublicRole()) != null) {
                     av.setLocked(vc.getPermissionOverride(Main.getNoctori().getPublicRole()).getDenied().contains(Permission.VOICE_CONNECT));
                 }
+
+                //Send New Control Panels.
+                av.updateControlPanel();
 
                 //Finally, add to master list.
                 channels.put(vc.getIdLong(), av);
@@ -412,14 +417,7 @@ public class VoiceManager extends ListenerAdapter {
             voiceChannel.upsertPermissionOverride(Main.getNoctori().getPublicRole()).grant(newChannelPermissions).queue();
             voiceChannel.upsertPermissionOverride(member).grant(adminAllowedPermissions).grant(joinChannelPermissions).queue();
             log.info(member.getEffectiveName() + " created a New Voice Channel.");
-            voiceChannel.sendMessageEmbeds(vc.toEmbed()).addActionRow(
-                    Button.primary("vc-lock", "Lock"),
-                    Button.secondary("vc-rename", "Rename"),
-                    Button.secondary("vc-autoRename", "Auto Rename")
-            ).addActionRow(
-                    Button.primary("vc-addMusic", "Add Jukebox"),
-                    Button.success("vc-addAdmin", "Add Admin")
-            ).queue(vc::setControlPanel);
+            vc.updateControlPanel();
         });
 
     }
@@ -557,11 +555,16 @@ public class VoiceManager extends ListenerAdapter {
             return "The voice channel you are in is not able to have Channel Admins!";
         }
 
-        // If commander is a channel admin, toggle the channel lock.
+        // If commander is a channel admin, give the member channel admin status.
         if (vc.channelAdmins.contains(commander)) {
-            vc.addChannelAdmin(newChannelAdmin);
-            log.info(commander.getEffectiveName() + " made " + newChannelAdmin.getEffectiveName() + " a channel admin.");
-            return newChannelAdmin.getEffectiveName() + " was made a Channel Admin";
+            if (vc.channelAdmins.contains(newChannelAdmin)) {
+                log.info(commander.getEffectiveName() + " tried to add " + newChannelAdmin.getEffectiveName() + " as a channel admin, but they are already one.");
+                return newChannelAdmin.getEffectiveName() + " is already a Channel Admin.";
+            } else {
+                vc.addChannelAdmin(newChannelAdmin);
+                log.info(commander.getEffectiveName() + " made " + newChannelAdmin.getEffectiveName() + " a channel admin.");
+                return newChannelAdmin.getEffectiveName() + " was made a Channel Admin.";
+            }
         } else {
             log.info("Blocked " + commander.getEffectiveName() + " from adding a Channel Admin, since they are not a Channel Admin.");
             return "You must be a `Channel Admin` to add other Channel Admins.";
@@ -847,16 +850,24 @@ class NoctoriVoiceChannel {
         return getVoiceChannel().sendMessageEmbeds(embed);
     }
 
-    protected void setControlPanel(Message message) {
+    private void setControlPanel(Message message) {
         this.controlPanel = message;
     }
 
     protected void updateControlPanel() {
         if (controlPanel == null) {
-            sendMessageEmbeds(toEmbed()).queue(this::setControlPanel);
+            sendMessageEmbeds(toEmbed()).addActionRow(
+                    Button.primary("vc-lock", "Lock"),
+                    Button.secondary("vc-rename", "Rename"),
+                    Button.secondary("vc-autoRename", "Auto Rename")
+            ).addActionRow(
+                    Button.primary("vc-addMusic", "Add Jukebox"),
+                    Button.success("vc-addAdmin", "Add Admin")
+            ).queue(this::setControlPanel);
             return;
+        } else {
+            controlPanel.editMessageEmbeds(toEmbed()).queue();
         }
-        controlPanel.editMessageEmbeds(toEmbed()).queue();
     }
 
     protected void delete() {
