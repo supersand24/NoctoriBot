@@ -405,17 +405,28 @@ public class VoiceManager extends ListenerAdapter {
     }
 
     private void newChannel(Member member) {
+        if (member.getVoiceState() == null) {
+            return;
+        }
+
         if (!member.getVoiceState().inAudioChannel()) return;
 
         StageChannel stageChannel = member.getVoiceState().getChannel().asStageChannel();
         if (stageChannel.getIdLong() != AUTO_VOICE_NEW_CHANNEL_ID) return;
 
-        stageChannel.getParentCategory().createVoiceChannel("Vibing").setPosition(0).setNSFW(false).queue(voiceChannel -> {
+        stageChannel.getParentCategory().createVoiceChannel("Vibing")
+                .setPosition(0)
+                .setNSFW(false)
+                .setBitrate(stageChannel.getGuild().getMaxBitrate())
+                .queue(voiceChannel -> {
             NoctoriVoiceChannel vc = new NoctoriVoiceChannel(voiceChannel, member);
             channels.put(voiceChannel.getIdLong(), vc);
             Main.getNoctori().moveVoiceMember(member, voiceChannel).queue();
-            voiceChannel.upsertPermissionOverride(Main.getNoctori().getPublicRole()).grant(newChannelPermissions).queue();
-            voiceChannel.upsertPermissionOverride(member).grant(adminAllowedPermissions).grant(joinChannelPermissions).queue();
+            EnumSet<Permission> adminAndJoinPermissions = EnumSet.copyOf(adminAllowedPermissions);
+            adminAndJoinPermissions.addAll(joinChannelPermissions);
+            voiceChannel.upsertPermissionOverride(Main.getNoctori().getPublicRole()).grant(newChannelPermissions).queue(permissionOverride -> {
+                voiceChannel.upsertPermissionOverride(member).grant(adminAllowedPermissions).queue(permissionOverride1 -> voiceChannel.upsertPermissionOverride(member).grant(joinChannelPermissions).queue());
+            });
             log.info(member.getEffectiveName() + " created a New Voice Channel.");
             vc.updateControlPanel();
         });
