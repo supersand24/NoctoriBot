@@ -20,14 +20,12 @@ import net.dv8tion.jda.api.events.channel.update.ChannelUpdateNameEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
-import net.dv8tion.jda.api.events.session.SessionDisconnectEvent;
 import net.dv8tion.jda.api.events.session.SessionRecreateEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateActivitiesEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.selections.EntitySelectMenu;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import org.jetbrains.annotations.NotNull;
@@ -39,6 +37,7 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class VoiceManager extends ListenerAdapter {
@@ -114,7 +113,7 @@ public class VoiceManager extends ListenerAdapter {
                 }
 
                 //Send New Control Panels.
-                av.updateControlPanel();
+                av.sendControlPanel();
 
                 //Finally, add to master list.
                 channels.put(vc.getIdLong(), av);
@@ -577,8 +576,71 @@ public class VoiceManager extends ListenerAdapter {
                 return newChannelAdmin.getEffectiveName() + " was made a Channel Admin.";
             }
         } else {
-            log.info("Blocked " + commander.getEffectiveName() + " from adding a Channel Admin, since they are not a Channel Admin.");
-            return "You must be a `Channel Admin` to add other Channel Admins.";
+            if (commander.getRoles().contains(commander.getGuild().getRoleById(444523985795940353L))) {
+                vc.addChannelAdmin(newChannelAdmin);
+                log.info(commander.getEffectiveName() + " made themself a channel admin, using owner privileges.");
+                return "You forced yourself to be `Channel Admin` using owner privileges.";
+            } else {
+                log.info("Blocked " + commander.getEffectiveName() + " from adding a Channel Admin, since they are not a Channel Admin.");
+                return "You must be a `Channel Admin` to add other Channel Admins.";
+            }
+        }
+    }
+
+    public static void toggleChannelLock(IReplyCallback e) {
+        Member commander = e.getMember();
+
+        // Make sure the VOICE_STATE flag is enabled.
+        if (commander.getVoiceState() == null) {
+            log.error(commander.getEffectiveName() + " attempted to toggle a channel lock, but bot is missing a flag.");
+            e.reply("Sorry this could not be done, please see an admin.").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            return;
+        }
+
+        // Check if the commander is connected to a voice channel.
+        AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
+        if (audioChannel == null) {
+            log.error(commander.getEffectiveName() + " tried to toggle a channel lock while not in a voice channel.");
+            e.reply("You are not connect to a voice channel!").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            return;
+        }
+
+        // Make sure the channel type is in a Voice Channel, not a Stage Channel or etc.
+        if (audioChannel.getType() != ChannelType.VOICE) {
+            log.error(commander.getEffectiveName() + " tried to toggle a channel lock while not in a Voice Channel. | ChannelType=" + audioChannel.getType());
+            e.reply("You can only do this in a normal voice channel!").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            return;
+        }
+
+        // Get NoctoriVoiceChannel from the connected voice channel.
+        NoctoriVoiceChannel vc = getVoiceChannel(audioChannel.getIdLong());
+        if (vc == null) {
+            log.error(commander.getEffectiveName() + " tried to toggle a channel lock, on a non compatible channel.");
+            e.reply("This channel can not be locked/unlocked.").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            return;
+        }
+
+        // If commander is a channel admin, toggle the channel lock.
+        if (vc.channelAdmins.contains(commander)) {
+            if (vc.isLocked()) {
+                vc.setLocked(false);
+                log.info(commander.getEffectiveName() + " unlocked " + vc.getName() + ".");
+                e.reply("Channel was locked.").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            } else {
+                vc.setLocked(true);
+                log.info(commander.getEffectiveName() + " locked " + vc.getName() + ".");
+                e.reply("Channel was unlocked.").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            }
+        } else {
+            if (commander.getRoles().contains(commander.getGuild().getRoleById(444523985795940353L))) {
+                e.reply("You must be a `Channel Admin` to lock/unlock the Channel.  As an owner, would you like to override this?")
+                        .addActionRow(
+                                Button.danger("admin-giveSelfVCAdmin", "Give Self Channel Admin")
+                        ).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(7 , TimeUnit.SECONDS));
+            } else {
+                log.info("Blocked " + commander.getEffectiveName() + " from toggling a Channel Lock, since they are not a Channel Admin.");
+                e.reply("You must be a `Channel Admin` to lock/unlock the Channel").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            }
         }
     }
 
@@ -837,6 +899,7 @@ class NoctoriVoiceChannel {
                 );
             }
         }
+        updateControlPanel();
     }
 
     //Ease of Access Commands
@@ -861,22 +924,26 @@ class NoctoriVoiceChannel {
         return getVoiceChannel().sendMessageEmbeds(embed);
     }
 
+    protected void sendControlPanel() {
+        String lockLabel;
+        if (isLocked()) { lockLabel = "Unlock"; } else { lockLabel = "Lock"; }
+
+        sendMessageEmbeds(toEmbed()).addActionRow(
+                Button.primary("vc-lock", lockLabel),
+                Button.secondary("vc-rename", "Rename"),
+                Button.secondary("vc-autoRename", "Auto Rename")
+        ).addActionRow(
+                Button.primary("vc-addMusic", "Add Jukebox"),
+                Button.success("vc-addAdmin", "Add Admin")
+        ).queue(this::setControlPanel);
+    }
+
     private void setControlPanel(Message message) {
         this.controlPanel = message;
     }
 
     protected void updateControlPanel() {
-        if (controlPanel == null) {
-            sendMessageEmbeds(toEmbed()).addActionRow(
-                    Button.primary("vc-lock", "Lock"),
-                    Button.secondary("vc-rename", "Rename"),
-                    Button.secondary("vc-autoRename", "Auto Rename")
-            ).addActionRow(
-                    Button.primary("vc-addMusic", "Add Jukebox"),
-                    Button.success("vc-addAdmin", "Add Admin")
-            ).queue(this::setControlPanel);
-            return;
-        } else {
+        if (controlPanel != null) {
             controlPanel.editMessageEmbeds(toEmbed()).queue();
         }
     }

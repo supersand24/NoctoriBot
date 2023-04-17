@@ -138,7 +138,10 @@ public class Listener extends ListenerAdapter {
                             }
                         }
                     }
-                    case "lock" -> e.reply(VoiceManager.toggleChannelLock(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+                    case "lock" -> {
+                        VoiceManager.toggleChannelLock(e);
+                        //e.reply(VoiceManager.toggleChannelLock(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+                    }
                     case "auto-rename" -> e.reply(VoiceManager.toggleAutoRename(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
                     case "give-key" -> e.reply(VoiceManager.giveChannelKey(e.getMember(),e.getOption("member").getAsMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
                     case "edit" -> {
@@ -262,7 +265,10 @@ public class Listener extends ListenerAdapter {
             case "music-pause" -> e.reply(VoiceManager.pauseMusic(e.getGuild())).setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "music-skip" -> e.reply(VoiceManager.skipTrack(e.getGuild())).setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "music-stop" -> e.reply(VoiceManager.stopAndClear(e.getGuild(),true)).setEphemeral(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
-            case "vc-lock" -> e.reply(VoiceManager.toggleChannelLock(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            case "vc-lock" -> {
+                VoiceManager.toggleChannelLock(e);
+                //e.reply(VoiceManager.toggleChannelLock(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            }
             case "vc-rename" -> {
                 log.info("Sent Rename Channel Modal to " + e.getMember().getEffectiveName());
                 e.replyModal(
@@ -284,6 +290,7 @@ public class Listener extends ListenerAdapter {
                                         .build()
                         ).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(1, TimeUnit.MINUTES));
             }
+            case "admin-giveSelfVCAdmin" -> e.reply(VoiceManager.addChannelAdmin(e.getMember(),e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
         }
     }
 
