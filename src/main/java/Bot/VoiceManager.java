@@ -522,6 +522,7 @@ public class VoiceManager extends ListenerAdapter {
                                         }
                                     }
                                 }
+                                case "YouTube Music" -> hashMap.merge("Vibing", 1, Integer::sum);
                                 case "tModLoader" -> hashMap.merge("Terraria", 1, Integer::sum);
                                 default -> hashMap.merge(activity.getName(), 1, Integer::sum);
                             }
