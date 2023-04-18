@@ -412,12 +412,14 @@ public class VoiceManager extends ListenerAdapter {
             NoctoriVoiceChannel vc = channels.get(channelLeft.getIdLong());
             log.info(member.getEffectiveName() + " left " + channelLeft.getName() + ".");
             vc.getVoiceChannel().sendMessage("`" + member.getEffectiveName() + "` left the call.").setTTS(true).queue(message -> {
-                if (channelLeft.getMembers().size() <= 0) {
+                if (vc.getMembers().size() <= 0) {
                     channels.remove(channelLeft.getIdLong());
                     vc.delete();
                 } else {
                     vc.removeChannelAdmin(member);
-                    vc.getVoiceChannel().upsertPermissionOverride(member).clear(joinChannelPermissions).clear(adminAllowedPermissions).queue();
+                    vc.getVoiceChannel().upsertPermissionOverride(member).clear(joinChannelPermissions).queue(permissionOverride ->
+                            vc.getVoiceChannel().upsertPermissionOverride(member).clear(adminAllowedPermissions)
+                    );
                 }
             });
         }
@@ -826,7 +828,9 @@ class NoctoriVoiceChannel {
     }
 
     public List<Member> getMembers() {
-        return getVoiceChannel().getMembers();
+        List<Member> members = getVoiceChannel().getMembers();
+        members.removeIf(member -> member.getUser().isBot());
+        return members;
     }
 
     protected void setAutoRename(boolean autoRename) {
