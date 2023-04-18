@@ -284,11 +284,18 @@ public class Listener extends ListenerAdapter {
             }
             case "vc-autoRename" -> e.reply(VoiceManager.toggleAutoRename(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "vc-addMusic" -> e.reply(VoiceManager.addJukebox(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            case "vc-removeMusic" -> e.reply(VoiceManager.removeJukebox(e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
             case "vc-addAdmin" -> {
                 e.reply("Who would you like to add as an channel admin?").addActionRow(
                                 EntitySelectMenu.create("vc-addAdmin", EntitySelectMenu.SelectTarget.USER)
                                         .build()
                         ).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(1, TimeUnit.MINUTES));
+            }
+            case "vc-giveKey" -> {
+                e.reply("Who would you like to give a channel key to?").addActionRow(
+                        EntitySelectMenu.create("vc-giveKey", EntitySelectMenu.SelectTarget.USER)
+                                .build()
+                ).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(1, TimeUnit.MINUTES));
             }
             case "admin-giveSelfVCAdmin" -> e.reply(VoiceManager.addChannelAdmin(e.getMember(),e.getMember())).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
         }
@@ -340,6 +347,7 @@ public class Listener extends ListenerAdapter {
         super.onEntitySelectInteraction(e);
         switch (e.getComponentId()) {
             case "vc-addAdmin" -> e.reply(VoiceManager.addChannelAdmin(e.getMember(),e.getMentions().getMembers().get(0))).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+            case "vc-giveKey" -> e.reply(VoiceManager.giveChannelKey(e.getMember(),e.getMentions().getMembers().get(0))).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
         }
     }
 

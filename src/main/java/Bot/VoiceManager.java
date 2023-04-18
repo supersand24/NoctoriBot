@@ -24,6 +24,7 @@ import net.dv8tion.jda.api.events.session.SessionRecreateEvent;
 import net.dv8tion.jda.api.events.user.update.UserUpdateActivitiesEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -133,6 +134,7 @@ public class VoiceManager extends ListenerAdapter {
         log.info("Music Manager Ready!");
     }
 
+    /// Music Related
     public static MusicManager getMusicManager(Guild guild) {
         return musicManagers.computeIfAbsent(guild.getIdLong(), (guildId) -> {
             final MusicManager guildManager = new MusicManager(audioPlayerManager);
@@ -261,10 +263,7 @@ public class VoiceManager extends ListenerAdapter {
      */
     public static String addJukebox(Member commander) {
         // Make sure the VOICE_STATE flag is enabled.
-        if (commander.getVoiceState() == null) {
-            log.error(commander.getEffectiveName() + " attempted to add the jukebox, but bot is missing a flag.");
-            return "Sorry this could not be done, please see an admin.";
-        }
+        if (checkVoiceStateFlag(commander.getVoiceState())) return "Sorry this could not be done, please see a bot developer.";
 
         // Check if the commander is connected to a voice channel.
         AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
@@ -317,10 +316,7 @@ public class VoiceManager extends ListenerAdapter {
      */
     public static String removeJukebox(Member commander) {
         // Make sure the VOICE_STATE flag is enabled.
-        if (commander.getVoiceState() == null) {
-            log.error(commander.getEffectiveName() + " attempted to remove the jukebox, but bot is missing a flag.");
-            return "Sorry this could not be done, please see an admin.";
-        }
+        if (checkVoiceStateFlag(commander.getVoiceState())) return "Sorry this could not be done, please see a bot developer.";
 
         // Check if the commander is connected to a voice channel.
         AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
@@ -346,6 +342,30 @@ public class VoiceManager extends ListenerAdapter {
             log.info("Blocked " + commander.getEffectiveName() + " from removing the jukebox, since they are not a Channel Admin.");
             return "You must be a `Channel Admin` to remove the jukebox.";
         }
+    }
+
+    // Other
+
+    /**
+     * Gets the commander that requested the interaction.
+     * @param replyCallback the interaction that was recieved.
+     * @return the commander requesting the application.
+     */
+    public static Member getCommander(IReplyCallback replyCallback) {
+        Member commander = replyCallback.getMember();
+        if (commander == null) log.error("Reply Callback could not find the commander.");
+        return commander;
+    }
+
+    /**
+     * Checks to see if the {@link net.dv8tion.jda.api.utils.cache.CacheFlag#VOICE_STATE} is enabled.
+     * @param voiceState The voice state to check.
+     */
+    public static boolean checkVoiceStateFlag(GuildVoiceState voiceState) {
+        if (voiceState == null) {
+            log.error("Bot is missing the VOICE_STATE flag.");
+            return true;
+        } else return false;
     }
 
     @Override
@@ -427,7 +447,7 @@ public class VoiceManager extends ListenerAdapter {
                 voiceChannel.upsertPermissionOverride(member).grant(adminAllowedPermissions).queue(permissionOverride1 -> voiceChannel.upsertPermissionOverride(member).grant(joinChannelPermissions).queue());
             });
             log.info(member.getEffectiveName() + " created a New Voice Channel.");
-            vc.updateControlPanel();
+            vc.sendControlPanel();
         });
 
     }
@@ -588,15 +608,18 @@ public class VoiceManager extends ListenerAdapter {
         }
     }
 
+    /**
+     Toggles the lock status of a voice channel if the commanding user is a channel admin.
+     If the commander is not in a voice channel or the voice channel is not a NoctoriVoiceChannel, the method logs an error message and returns an error message for the commander.
+     Otherwise, the method sets the lock status of the NoctoriVoiceChannel object based on the current status and returns a notification string.
+     @param e the interaction that requested channel lock
+     */
     public static void toggleChannelLock(IReplyCallback e) {
-        Member commander = e.getMember();
+        Member commander = getCommander(e);
 
         // Make sure the VOICE_STATE flag is enabled.
-        if (commander.getVoiceState() == null) {
-            log.error(commander.getEffectiveName() + " attempted to toggle a channel lock, but bot is missing a flag.");
-            e.reply("Sorry this could not be done, please see an admin.").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
-            return;
-        }
+        if (checkVoiceStateFlag(commander.getVoiceState()))
+            e.reply("Sorry this could not be done, please see a bot developer.").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3, TimeUnit.SECONDS));
 
         // Check if the commander is connected to a voice channel.
         AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
@@ -626,11 +649,11 @@ public class VoiceManager extends ListenerAdapter {
             if (vc.isLocked()) {
                 vc.setLocked(false);
                 log.info(commander.getEffectiveName() + " unlocked " + vc.getName() + ".");
-                e.reply("Channel was locked.").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+                vc.tempReply(e, "Channel was locked.");
             } else {
                 vc.setLocked(true);
                 log.info(commander.getEffectiveName() + " locked " + vc.getName() + ".");
-                e.reply("Channel was unlocked.").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+                vc.tempReply(e, "Channel was unlocked.");
             }
         } else {
             if (commander.getRoles().contains(commander.getGuild().getRoleById(444523985795940353L))) {
@@ -640,59 +663,8 @@ public class VoiceManager extends ListenerAdapter {
                         ).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(7 , TimeUnit.SECONDS));
             } else {
                 log.info("Blocked " + commander.getEffectiveName() + " from toggling a Channel Lock, since they are not a Channel Admin.");
-                e.reply("You must be a `Channel Admin` to lock/unlock the Channel").setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3 ,TimeUnit.SECONDS));
+                vc.tempReply(e, "You must be a `Channel Admin` to lock/unlock the Channel");
             }
-        }
-    }
-
-    /**
-     Toggles the lock status of a voice channel if the commanding user is a channel admin.
-     If the commander is not in a voice channel or the voice channel is not a NoctoriVoiceChannel, the method logs an error message and returns an error message for the commander.
-     Otherwise, the method sets the lock status of the NoctoriVoiceChannel object based on the current status and returns a notification string.
-     @param commander the member who is trying to change the lock status.
-     @return a notification string indicating whether the channel was locked or unlocked, or an error message indicating why the channel could not be locked or unlocked.
-     */
-    public static String toggleChannelLock(Member commander) {
-        // Make sure the VOICE_STATE flag is enabled.
-        if (commander.getVoiceState() == null) {
-            log.error(commander.getEffectiveName() + " attempted to toggle a channel lock, but bot is missing a flag.");
-            return "Sorry this could not be done, please see an admin.";
-        }
-
-        // Check if the commander is connected to a voice channel.
-        AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
-        if (audioChannel == null) {
-            log.error(commander.getEffectiveName() + " tried to toggle a channel lock while not in a voice channel.");
-            return "You are not connected to a voice channel!";
-        }
-
-        // Make sure the channel type is in a Voice Channel, not a Stage Channel or etc.
-        if (audioChannel.getType() != ChannelType.VOICE) {
-            log.error(commander.getEffectiveName() + " tried to toggle a channel lock while not in a Voice Channel. | ChannelType=" + audioChannel.getType());
-            return "You can only do this in a normal voice channel!";
-        }
-
-        // Get NoctoriVoiceChannel from the connected voice channel.
-        NoctoriVoiceChannel vc = getVoiceChannel(audioChannel.getIdLong());
-        if (vc == null) {
-            log.error(commander.getEffectiveName() + " tried to toggle a channel lock, on a non compatible channel.");
-            return "This channel can not be locked/unlocked.";
-        }
-
-        // If commander is a channel admin, toggle the channel lock.
-        if (vc.channelAdmins.contains(commander)) {
-            if (vc.isLocked()) {
-                vc.setLocked(false);
-                log.info(commander.getEffectiveName() + " unlocked " + vc.getName() + ".");
-                return "Channel was locked.";
-            } else {
-                vc.setLocked(true);
-                log.info(commander.getEffectiveName() + " locked " + vc.getName() + ".");
-                return "Channel was unlocked.";
-            }
-        } else {
-            log.info("Blocked " + commander.getEffectiveName() + " from toggling a Channel Lock, since they are not a Channel Admin.");
-            return "You must be a `Channel Admin` to lock/unlock the Channel";
         }
     }
 
@@ -705,10 +677,7 @@ public class VoiceManager extends ListenerAdapter {
      */
     public static String toggleAutoRename(Member commander) {
         // Make sure the VOICE_STATE flag is enabled.
-        if (commander.getVoiceState() == null) {
-            log.error(commander.getEffectiveName() + " attempted to toggle auto voice rename, but bot is missing a flag.");
-            return "Sorry this could not be done, please see an admin.";
-        }
+        if (checkVoiceStateFlag(commander.getVoiceState())) return "Sorry this could not be done, please see a bot developer.";
 
         // Check if the commander is connected to a voice channel.
         AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
@@ -757,10 +726,7 @@ public class VoiceManager extends ListenerAdapter {
      */
     public static String giveChannelKey(Member commander, Member giftMember) {
         // Make sure the VOICE_STATE flag is enabled.
-        if (commander.getVoiceState() == null) {
-            log.error(commander.getEffectiveName() + " attempted to give a key to " + giftMember.getEffectiveName() + ", but bot is missing a flag.");
-            return "Sorry this could not be done, please see an admin.";
-        }
+        if (checkVoiceStateFlag(commander.getVoiceState())) return "Sorry this could not be done, please see a bot developer.";
 
         // Check if the commander is connected to a voice channel.
         AudioChannelUnion audioChannel = commander.getVoiceState().getChannel();
@@ -818,7 +784,6 @@ class NoctoriVoiceChannel {
     final VoiceChannel voiceChannel;
     Member creator;
     Message controlPanel;
-    final List<LayoutComponent> controlPanelButtons = new ArrayList<>();
 
     final List<Member> channelAdmins = new ArrayList<>();
 
@@ -925,18 +890,12 @@ class NoctoriVoiceChannel {
         return getVoiceChannel().sendMessageEmbeds(embed);
     }
 
-    protected void sendControlPanel() {
-        String lockLabel;
-        if (isLocked()) { lockLabel = "Unlock"; } else { lockLabel = "Lock"; }
+    protected void tempReply(IReplyCallback interaction, String message) {
+        interaction.reply(message).setEphemeral(true).setSuppressedNotifications(true).queue(interactionHook -> interactionHook.deleteOriginal().queueAfter(3, TimeUnit.SECONDS));
+    }
 
-        sendMessageEmbeds(toEmbed()).addActionRow(
-                Button.primary("vc-lock", lockLabel),
-                Button.secondary("vc-rename", "Rename"),
-                Button.secondary("vc-autoRename", "Auto Rename")
-        ).addActionRow(
-                Button.primary("vc-addMusic", "Add Jukebox"),
-                Button.success("vc-addAdmin", "Add Admin")
-        ).queue(this::setControlPanel);
+    protected void sendControlPanel() {
+        sendMessageEmbeds(toEmbed()).setComponents(getControlPanelButtons()).queue(this::setControlPanel);
     }
 
     private void setControlPanel(Message message) {
@@ -945,8 +904,38 @@ class NoctoriVoiceChannel {
 
     protected void updateControlPanel() {
         if (controlPanel != null) {
-            controlPanel.editMessageEmbeds(toEmbed()).queue();
+            controlPanel.editMessageComponents(getControlPanelButtons()).queue(
+                    message -> controlPanel.editMessageEmbeds(toEmbed()).queue()
+            );
         }
+    }
+
+    private ArrayList<LayoutComponent> getControlPanelButtons() {
+        String lockLabel;
+        if (isLocked()) { lockLabel = "Unlock"; } else { lockLabel = "Lock"; }
+
+        ArrayList<LayoutComponent> actionRows = new ArrayList<>();
+
+        actionRows.add(ActionRow.of(
+                Button.danger("vc-lock", lockLabel),
+                Button.success("vc-giveKey", "Give Key")
+        ));
+
+        actionRows.add(ActionRow.of(
+                Button.primary("vc-rename", "Rename"),
+                Button.secondary("vc-autoRename", "Auto Rename")
+        ));
+
+        actionRows.add(ActionRow.of(
+                Button.primary("vc-addMusic", "Add Jukebox"),
+                Button.danger("vc-removeMusic", "Remove Jukebox")
+        ));
+
+        actionRows.add(ActionRow.of(
+                Button.secondary("vc-addAdmin", "Add Admin")
+        ));
+
+        return actionRows;
     }
 
     protected void delete() {
