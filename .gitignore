@@ -25,8 +25,13 @@ hs_err_pid*
 bot.token
 *.var
 *.bak
-.idea/runConfigurations.xml
+
+# IntelliJ files
+.idea/*
+
+# Variables
 leaderboards/*
+
+# Logger Files
 src/main/resources/logback.xml
 target/classes/logback.xml
-.idea/uiDesigner.xml
