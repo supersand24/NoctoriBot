@@ -1,6 +1,7 @@
 package Bot;
 
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.StageChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.util.List;
 
 public class NewVar {
@@ -60,7 +62,7 @@ public class NewVar {
             results.next();
             return results;
         } catch (SQLException ex) {
-            log.error("Could not find " + guild.getName() + " on database.");
+            log.error("Could not find guild " + guild.getName() + " on database.");
         }
         return null;
     }
@@ -87,6 +89,50 @@ public class NewVar {
 
     public static StageChannel getAutoVoiceNewChannel(Guild guild) {
         return guild.getStageChannelById(getAutoVoiceNewChannelId(guild));
+    }
+
+    //User Related
+
+    private static ResultSet getResultsForUser(User user) {
+        if (user == null) { log.error("User was null."); }
+        try {
+            ResultSet results = statement.executeQuery("select * from user where id = " + user.getId());
+            results.next();
+            return results;
+        } catch (SQLException ex) {
+            log.error("Could not find user " + user.getName() + " on database.");
+        }
+        return null;
+    }
+
+    public static LocalDate getGameClaimedDate(User user) {
+        try {
+            ResultSet results = getResultsForUser(user);
+            return results.getDate("gameClaimedDate").toLocalDate();
+        } catch (Exception ex) {
+            log.error("getGameClaimedDate could not be retrieved.");
+        }
+        return null;
+    }
+
+    public static long getGenshinUID(User user) {
+        try {
+            ResultSet results = getResultsForUser(user);
+            return results.getLong("genshinUID");
+        } catch (Exception ex) {
+            log.error("getGenshinUID could not be retrieved.");
+        }
+        return 0;
+    }
+
+    public static long getMinedcraftUUID(User user) {
+        try {
+            ResultSet results = getResultsForUser(user);
+            return results.getLong("minecraftUUID");
+        } catch (Exception ex) {
+            log.error("getMinedcraftUUID could not be retrieved.");
+        }
+        return 0;
     }
 
 }
