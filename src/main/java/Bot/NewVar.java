@@ -1,6 +1,7 @@
 package Bot;
 
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.StageChannel;
 import org.slf4j.Logger;
@@ -56,13 +57,13 @@ public class NewVar {
     //Guild Related
 
     private static ResultSet getResultsForGuild(Guild guild) {
-        if (guild == null) { log.error("Guild was null."); }
+        if (guild == null) { log.error("Guild was null."); return null; }
         try {
             ResultSet results = statement.executeQuery("select * from guild where id = " + guild.getId());
             results.next();
             return results;
         } catch (SQLException ex) {
-            log.error("Could not find guild " + guild.getName() + " on database.");
+            log.error("Could not find " + guild.getName() + " guild on database.");
         }
         return null;
     }
@@ -94,7 +95,7 @@ public class NewVar {
     //User Related
 
     private static ResultSet getResultsForUser(User user) {
-        if (user == null) { log.error("User was null."); }
+        if (user == null) { log.error("User was null."); return null; }
         try {
             ResultSet results = statement.executeQuery("select * from user where id = " + user.getId());
             results.next();
@@ -131,6 +132,56 @@ public class NewVar {
             return results.getLong("minecraftUUID");
         } catch (Exception ex) {
             log.error("getMinedcraftUUID could not be retrieved.");
+        }
+        return 0;
+    }
+
+    //Member Related
+
+    private static ResultSet getResultsForMember(User user, Guild guild) {
+        if (user == null) { log.error("User was null."); return null; }
+        if (guild == null) { log.error("Guild was null."); return null; }
+        try {
+            ResultSet results = statement.executeQuery("select * from member where user_id = " + user.getId() + " and guild_id = " + guild.getId() );
+            results.next();
+            return results;
+        } catch (SQLException ex) {
+            log.error("Could not find user " + user.getName() + " for " + guild.getName() + " guild on database.");
+        }
+        return null;
+    }
+
+    private static ResultSet getResultsForMember(Member member) {
+        if (member == null) { log.error("Member was null."); return null; }
+        return getResultsForMember(member.getUser(),member.getGuild());
+    }
+
+    public static int getMoney(Member member) {
+        try {
+            ResultSet results = getResultsForMember(member);
+            return results.getInt("money");
+        } catch (Exception ex) {
+            log.error("getMoney could not be retrieved.");
+        }
+        return 0;
+    }
+
+    public static LocalDate getDailyClaimed(Member member) {
+        try {
+            ResultSet results = getResultsForMember(member);
+            return results.getDate("dailyClaimed").toLocalDate();
+        } catch (Exception ex) {
+            log.error("getDailyClaimed could not be retrieved.");
+        }
+        return null;
+    }
+
+    public static int getDailiesClaimed(Member member) {
+        try {
+            ResultSet results = getResultsForMember(member);
+            return results.getInt("dailiesClaimed");
+        } catch (Exception ex) {
+            log.error("getDailiesClaimed could not be retrieved.");
         }
         return 0;
     }
