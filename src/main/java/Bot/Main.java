@@ -4,7 +4,6 @@ import Command.Profile;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -52,6 +51,9 @@ public class Main {
         try {
             jda = builder.build();
             jda.awaitReady();
+
+            //Start Connection with Database
+            NewVar.initialize();
 
             //Generic Slash Commands
             getNoctori().upsertCommand("money","Checks your Noctori Bank.").addSubcommands(
