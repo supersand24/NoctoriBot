@@ -10,10 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -25,7 +22,7 @@ public class NewVar {
     static String username;
     static String password;
 
-    static Statement statement;
+    static Connection connection;
 
     public static boolean initialize() {
         //Read the db.credentials files to get ip, username, and password.
@@ -44,7 +41,7 @@ public class NewVar {
 
         //Open connection
         try {
-            statement = DriverManager.getConnection("jdbc:mysql://" + ip + "/noctori_bot", username, password).createStatement();
+            connection = DriverManager.getConnection("jdbc:mysql://" + ip + "/noctori_bot", username, password);
         } catch (SQLException ex) {
             ex.printStackTrace();
             System.exit(4);
@@ -59,11 +56,24 @@ public class NewVar {
     private static ResultSet getResultsForGuild(Guild guild) {
         if (guild == null) { log.error("Guild was null."); return null; }
         try {
-            ResultSet results = statement.executeQuery("select * from guild where id = " + guild.getId());
+            ResultSet results = connection.createStatement().executeQuery("select * from guild where id = " + guild.getId());
             results.next();
             return results;
         } catch (SQLException ex) {
             log.error("Could not find " + guild.getName() + " guild on database.");
+        }
+        return null;
+    }
+
+    private static PreparedStatement getStatementForGuild(Guild guild, String update) {
+        if (guild == null) { log.error("Guild was null."); return null; }
+        try {
+            //connection.setAutoCommit(false);
+            String sql = "UPDATE `noctori_bot`.`guild` SET " + update + " = ? where id = " + guild.getId();
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            return preparedStatement;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
         return null;
     }
@@ -75,6 +85,20 @@ public class NewVar {
         } catch (Exception ex) {
             log.error("hasEconomy could not be retrieved.");
             return false;
+        }
+    }
+
+    public static void setEconomy(Guild guild, boolean economy) {
+        try {
+            if (guild == null) { log.error("Guild was null."); return; }
+            PreparedStatement preparedStatement = getStatementForGuild(guild, "hasEconomy");
+            if (economy)
+                preparedStatement.setInt(1, 1);
+            else
+                preparedStatement.setInt(1, 0);
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
     }
 
@@ -92,12 +116,34 @@ public class NewVar {
         return guild.getStageChannelById(getAutoVoiceNewChannelId(guild));
     }
 
+    public static void setAutoVoiceNewChannelId(Guild guild, long autoVoiceNewChannelId) {
+        try {
+            if (guild == null) { log.error("Guild was null."); return; }
+            PreparedStatement preparedStatement = getStatementForGuild(guild, "autoVoiceNewChannel");
+            preparedStatement.setLong(1, autoVoiceNewChannelId);
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static void setAutoVoiceNewChannelId(Guild guild, StageChannel autoVoiceNewChannel) {
+        try {
+            if (guild == null) { log.error("Guild was null."); return; }
+            PreparedStatement preparedStatement = getStatementForGuild(guild, "autoVoiceNewChannel");
+            preparedStatement.setLong(1, autoVoiceNewChannel.getIdLong());
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
     //User Related
 
     private static ResultSet getResultsForUser(User user) {
         if (user == null) { log.error("User was null."); return null; }
         try {
-            ResultSet results = statement.executeQuery("select * from user where id = " + user.getId());
+            ResultSet results = connection.createStatement().executeQuery("select * from user where id = " + user.getId());
             results.next();
             return results;
         } catch (SQLException ex) {
@@ -142,7 +188,7 @@ public class NewVar {
         if (user == null) { log.error("User was null."); return null; }
         if (guild == null) { log.error("Guild was null."); return null; }
         try {
-            ResultSet results = statement.executeQuery("select * from member where user_id = " + user.getId() + " and guild_id = " + guild.getId() );
+            ResultSet results = connection.createStatement().executeQuery("select * from member where user_id = " + user.getId() + " and guild_id = " + guild.getId() );
             results.next();
             return results;
         } catch (SQLException ex) {
