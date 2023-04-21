@@ -152,6 +152,19 @@ public class NewVar {
         return null;
     }
 
+    private static PreparedStatement getStatementForUser(User user, String update) {
+        if (user == null) { log.error("User was null."); return null; }
+        try {
+            //connection.setAutoCommit(false);
+            String sql = "UPDATE `noctori_bot`.`user` SET " + update + " = ? where id = " + user.getId();
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            return preparedStatement;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
     public static LocalDate getGameClaimedDate(User user) {
         try {
             ResultSet results = getResultsForUser(user);
@@ -160,6 +173,17 @@ public class NewVar {
             log.error("getGameClaimedDate could not be retrieved.");
         }
         return null;
+    }
+
+    public static void setGameClaimedDate(User user, LocalDate gameClaimedDate) {
+        try {
+            if (user == null) { log.error("User was null."); return; }
+            PreparedStatement preparedStatement = getStatementForUser(user, "autoVoiceNewChannel");
+            preparedStatement.setDate(1, Date.valueOf(gameClaimedDate));
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
     }
 
     public static long getGenshinUID(User user) {
@@ -172,14 +196,36 @@ public class NewVar {
         return 0;
     }
 
-    public static long getMinedcraftUUID(User user) {
+    public static void setGenshinUID(User user, long genshinUID) {
+        try {
+            if (user == null) { log.error("User was null."); return; }
+            PreparedStatement preparedStatement = getStatementForUser(user, "genshinUID");
+            preparedStatement.setLong(1, genshinUID);
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static String getMinecraftUUID(User user) {
         try {
             ResultSet results = getResultsForUser(user);
-            return results.getLong("minecraftUUID");
+            return results.getString("minecraftUUID");
         } catch (Exception ex) {
             log.error("getMinedcraftUUID could not be retrieved.");
         }
-        return 0;
+        return "";
+    }
+
+    public static void setMinecraftUUID(User user, String minecraftUUID) {
+        try {
+            if (user == null) { log.error("User was null."); return; }
+            PreparedStatement preparedStatement = getStatementForUser(user, "minecraftUUID");
+            preparedStatement.setString(1, minecraftUUID);
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
     }
 
     //Member Related
