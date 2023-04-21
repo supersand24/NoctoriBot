@@ -279,6 +279,28 @@ public class NewVar {
         }
     }
 
+    public static void addMoney(Member member, int money) {
+        try {
+            if (member == null) { log.error("Member was null."); return; }
+            PreparedStatement preparedStatement = getStatementForMember(member, "money");
+            preparedStatement.setInt(1, money + getMoney(member));
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static void removeMoney(Member member, int money) {
+        try {
+            if (member == null) { log.error("Member was null."); return; }
+            PreparedStatement preparedStatement = getStatementForMember(member, "money");
+            preparedStatement.setInt(1, money - getMoney(member));
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
     public static LocalDate getDailyClaimed(Member member) {
         try {
             ResultSet results = getResultsForMember(member);
@@ -294,6 +316,17 @@ public class NewVar {
             if (member == null) { log.error("Member was null."); return; }
             PreparedStatement preparedStatement = getStatementForMember(member, "dailyClaimed");
             preparedStatement.setDate(1, Date.valueOf(dailyClaimed));
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static void updateDailyClaimed(Member member) {
+        try {
+            if (member == null) { log.error("Member was null."); return; }
+            PreparedStatement preparedStatement = getStatementForMember(member, "dailyClaimed");
+            preparedStatement.setDate(1, Date.valueOf(LocalDate.now()));
             preparedStatement.executeUpdate();
         } catch (SQLException ex) {
             ex.printStackTrace();
