@@ -70,8 +70,7 @@ public class NewVar {
         try {
             //connection.setAutoCommit(false);
             String sql = "UPDATE `noctori_bot`.`guild` SET " + update + " = ? where id = " + guild.getId();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            return preparedStatement;
+            return connection.prepareStatement(sql);
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
@@ -157,8 +156,7 @@ public class NewVar {
         try {
             //connection.setAutoCommit(false);
             String sql = "UPDATE `noctori_bot`.`user` SET " + update + " = ? where id = " + user.getId();
-            PreparedStatement preparedStatement = connection.prepareStatement(sql);
-            return preparedStatement;
+            return connection.prepareStatement(sql);
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
@@ -248,6 +246,18 @@ public class NewVar {
         return getResultsForMember(member.getUser(),member.getGuild());
     }
 
+    private static PreparedStatement getStatementForMember(Member member, String update) {
+        if (member == null) { log.error("Member was null."); return null; }
+        try {
+            //connection.setAutoCommit(false);
+            String sql = "UPDATE `noctori_bot`.`member` SET " + update + " = ? where 'user_id' = " + member.getId() + " and 'guild_id' = " + member.getGuild().getId();
+            return connection.prepareStatement(sql);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
     public static int getMoney(Member member) {
         try {
             ResultSet results = getResultsForMember(member);
@@ -256,6 +266,17 @@ public class NewVar {
             log.error("getMoney could not be retrieved.");
         }
         return 0;
+    }
+
+    public static void setMoney(Member member, int money) {
+        try {
+            if (member == null) { log.error("Member was null."); return; }
+            PreparedStatement preparedStatement = getStatementForMember(member, "money");
+            preparedStatement.setInt(1, money);
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
     }
 
     public static LocalDate getDailyClaimed(Member member) {
@@ -268,6 +289,17 @@ public class NewVar {
         return null;
     }
 
+    public static void setDailyClaimed(Member member, LocalDate dailyClaimed) {
+        try {
+            if (member == null) { log.error("Member was null."); return; }
+            PreparedStatement preparedStatement = getStatementForMember(member, "dailyClaimed");
+            preparedStatement.setDate(1, Date.valueOf(dailyClaimed));
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
     public static int getDailiesClaimed(Member member) {
         try {
             ResultSet results = getResultsForMember(member);
@@ -276,6 +308,17 @@ public class NewVar {
             log.error("getDailiesClaimed could not be retrieved.");
         }
         return 0;
+    }
+
+    public static void setDailiesClaimed(Member member, int dailiesClaimed) {
+        try {
+            if (member == null) { log.error("Member was null."); return; }
+            PreparedStatement preparedStatement = getStatementForMember(member, "dailiesClaimed");
+            preparedStatement.setInt(1, dailiesClaimed);
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
     }
 
 }
