@@ -354,4 +354,45 @@ public class NewVar {
         }
     }
 
+    //Game Key Related
+
+    private static ResultSet getResultsForGameKeys(Guild guild) {
+        if (guild == null) { log.error("Guild was null."); return null; }
+        try {
+            ResultSet results = connection.createStatement().executeQuery("select * from game_keys where guild_id = " + guild.getId() );
+            results.next();
+            return results;
+        } catch (SQLException ex) {
+            log.error("Could not find any game keys for " + guild.getName() + " guild on database.");
+        }
+        return null;
+    }
+
+    private static ResultSet getResultsForGameKeys(User user) {
+        if (user == null) { log.error("User was null."); return null; }
+        try {
+            ResultSet results = connection.createStatement().executeQuery("select * from game_keys where claimedBy = " + user.getId() );
+            results.next();
+            return results;
+        } catch (SQLException ex) {
+            log.error("Could not find any game keys for user " + user.getName() + " on database.");
+        }
+        return null;
+    }
+
+    private static ResultSet getResultsForGameKeys(User user, Guild guild) {
+        if (user == null) { log.error("User was null."); return null; }
+        if (guild == null) { log.error("Guild was null."); return null; }
+        try {
+            ResultSet results = connection.createStatement().executeQuery("select * from game_keys where claimedBy = " + user.getId() + " and guild_id = " + guild.getId() );
+            results.next();
+            return results;
+        } catch (SQLException ex) {
+            log.error("Could not find any game keys for user " + user.getName() + " in " + guild.getName() + " guild on database.");
+        }
+        return null;
+    }
+
+    //TODO Add methods to get games claimed
+
 }
