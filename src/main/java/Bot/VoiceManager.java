@@ -380,7 +380,7 @@ public class VoiceManager extends ListenerAdapter {
         AudioChannel channelJoined = e.getChannelJoined();
         AudioChannel channelLeft = e.getChannelLeft();
 
-        Bank.daily(member);
+        //Bank.daily(member);
 
         //Get the channel joined.
         if (channelJoined != null) {
@@ -828,9 +828,7 @@ class NoctoriVoiceChannel {
     }
 
     public List<Member> getMembers() {
-        List<Member> members = getVoiceChannel().getMembers();
-        members.removeIf(member -> member.getUser().isBot());
-        return members;
+        return getVoiceChannel().getMembers();
     }
 
     protected void setAutoRename(boolean autoRename) {

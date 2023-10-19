@@ -1,10 +1,8 @@
 package Bot;
 
-import Command.Profile;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -53,6 +51,9 @@ public class Main {
             jda = builder.build();
             jda.awaitReady();
 
+            //Start Connection with Database
+            Var.verifyCredentials();
+
             //Generic Slash Commands
             getNoctori().upsertCommand("money","Checks your Noctori Bank.").addSubcommands(
                     new SubcommandData("balance","Check how much money is in your account."),
@@ -63,7 +64,7 @@ public class Main {
             ).queue();
 
             //Profile Command
-            Profile.init();
+            //Profile.init();
 
             //Voice Channel Command
             getNoctori().upsertCommand("vc", "Voice Channel Commands").addSubcommandGroups(
@@ -104,7 +105,7 @@ public class Main {
                             new OptionData(OptionType.BOOLEAN,"notification","Change Notification Value"),
                             new OptionData(OptionType.USER,"invited-by","Change Invited By Value"),
                             new OptionData(OptionType.INTEGER,"genshin-uid","Change Genshin UID Value"),
-                            new OptionData(OptionType.STRING,"minecraft-username","Change Minecraft Username Value"),
+                            new OptionData(OptionType.STRING,"minecraft-uuid","Change Minecraft UUID Value"),
                             new OptionData(OptionType.STRING,"profile-fields","Change Profile Fields Value")
                     )
             ).queue();
@@ -130,7 +131,7 @@ public class Main {
         }
     }
 
-    private static String getToken() {
+    static String getToken() {
         try {
             return Files.readAllLines(Paths.get("bot.token")).get(0);
         } catch (NoSuchFileException e) {

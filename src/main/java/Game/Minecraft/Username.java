@@ -14,7 +14,7 @@ public class Username {
             List<User> mentionedUsers = message.getMentions().getUsers();
             if (mentionedUsers.size() > 0) {
                 User user = mentionedUsers.get(0);
-                String username = ServerAPI.getUsername(Var.getMinecraftUsername(user));
+                String username = ServerAPI.getUsername(Var.getMinecraftUUID(user));
                 if (username.isEmpty()) {
                     message.reply(user.getName() + " does not have a Minecraft Username set, they can do so my using `n!username <INSERT USERNAME>`").mentionRepliedUser(false).queue();
                 } else {
@@ -23,7 +23,7 @@ public class Username {
             } else {
                 String uuid = ServerAPI.getUUID(arguments[1]);
                 if (uuid != null) {
-                    Var.setMinecraftUsername(member.getUser(), uuid);
+                    Var.setMinecraftUUID(member.getUser(), uuid);
                     message.reply("Set `" + arguments[1] + "` to be your Minecraft Username.").mentionRepliedUser(false).queue();
                 } else {
                     message.reply("Could not find a Minecraft Account under that Username!").mentionRepliedUser(false).queue();
