@@ -1,12 +1,9 @@
 package Bot;
 
-import Command.*;
 import Game.BlackOps3.Manager;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
-import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -19,11 +16,9 @@ import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.components.selections.EntitySelectMenu;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
-import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,26 +47,27 @@ public class Listener extends ListenerAdapter {
                     case "display" -> {
                         OptionMapping option = e.getOption("member");
                         if (option == null) {
-                            e.replyEmbeds(Profile.getProfile(e.getMember())).queue();
+                            //e.replyEmbeds(Profile.getProfile(e.getMember())).queue();
                         } else {
                             if (Main.getNoctori().getMembers().stream().map(Member::getIdLong).collect(Collectors.toList()).contains(option.getAsUser().getIdLong())) {
-                                e.replyEmbeds(Profile.getProfile(option.getAsMember())).queue();
+                                //e.replyEmbeds(Profile.getProfile(option.getAsMember())).queue();
                             } else {
                                 e.reply("That user isn't in Noctori").setEphemeral(true).queue();
                             }
                         }
                     }
-                    case "set" -> Profile.set(e);
+                    //case "set" -> Profile.set(e);
                 }
             }
             case "money" -> {
                 switch (commandSplit[1]) {
-                    case "balance" -> e.reply("$" + Var.getMoney(e.getUser())).setEphemeral(true).queue();
+                    case "balance" -> e.reply("$" + Var.getMoney(e.getMember())).setEphemeral(true).queue();
                     case "pay" -> {
                         int sentMoney = e.getOption("amount").getAsInt();
                         User user = e.getOption("member").getAsUser();
-                        if (Var.getMoney(user) >= sentMoney) {
-                            Var.addMoney(user, sentMoney);
+                        Member member = e.getOption("member").getAsMember();
+                        if (Var.getMoney(member) >= sentMoney) {
+                            Var.addMoney(member, sentMoney);
                             e.reply("$" + sentMoney + " has been sent to " + user.getName()).queue();
                         } else {
                             e.reply("Insufficient Funds...").setEphemeral(true).queue();
@@ -190,12 +186,12 @@ public class Listener extends ListenerAdapter {
                             }
                             case 1 -> {
                                 for (Member member : Main.getNoctori().getMembers()) {
-                                    System.out.println(Var.print(member.getUser()));
+                                    //System.out.println(Var.print(member.getUser()));
                                 }
                             }
                             case 99 -> {
                                 for (Member member : Main.getNoctori().getMembers()) {
-                                    if (Var.getInvitedByMember(member.getUser()).equals("0") && !member.getUser().isBot()) {
+                                    if (Var.getInvitedBy(member) == null && !member.getUser().isBot()) {
                                         System.out.println(member.getEffectiveName() + " | " + member.getIdLong());
                                     }
                                 }
@@ -206,20 +202,21 @@ public class Listener extends ListenerAdapter {
                     case "var" -> {
                         StringBuilder sb = new StringBuilder();
                         User user = e.getOption("user").getAsUser();
+                        Member member = e.getOption("user").getAsMember();
                         if (user.isBot()) {
                             sb.append(user.getName()).append(" is a bot.");
                         } else {
                             sb.append("Submitted changes for ").append(user.getName());
                             for (OptionMapping option : e.getOptions()) {
                                 switch (option.getName()) {
-                                    case "money" -> Var.setMoney(user,option.getAsInt());
-                                    case "notification" -> Var.setNotification(user,option.getAsBoolean());
-                                    case "genshin-uid" -> Var.setGenshinUid(user,option.getAsLong());
-                                    case "minecraft-username" -> Var.setMinecraftUsername(user,option.getAsString());
+                                    case "money" -> Var.setMoney(member,option.getAsInt());
+                                    case "notification" -> Var.setPaymentNotification(user,option.getAsBoolean());
+                                    case "genshin-uid" -> Var.setGenshinUID(user,option.getAsLong());
+                                    case "minecraft-uuid" -> Var.setMinecraftUUID(user,option.getAsString());
                                     case "profile-fields" -> {
                                         String fields = option.getAsString();
                                         if (fields.startsWith("[") && fields.endsWith("]")) {
-                                            Var.setMinecraftUsername(user,fields);
+                                            Var.setMinecraftUUID(user,fields);
                                         } else {
                                             sb.append("\nThe profile format is incorrect.");
                                         }
@@ -229,8 +226,7 @@ public class Listener extends ListenerAdapter {
                                         if (invitedBy == null) {
                                             sb.append("\nThat member is not in the server.");
                                         } else {
-                                            Var.setInvitedByMember(user, option.getAsMember());
-                                            Var.addMemberInvited(invitedBy.getUser(),Main.getNoctori().getMemberById(user.getIdLong()));
+                                            Var.setInvitedBy(Main.getNoctori().getMemberById(user.getIdLong()), invitedBy);
                                         }
                                     }
                                 }
@@ -354,7 +350,7 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
         if (!e.getAuthor().isBot()) {
-            Bank.daily(e.getMember());
+            //Bank.daily(e.getMember());
             String content = e.getMessage().getContentStripped();
             if (e.getMessage().getType() == MessageType.INLINE_REPLY) {
                 if (content.startsWith("repost to")) {
@@ -406,7 +402,7 @@ public class Listener extends ListenerAdapter {
         embed.setFooter("Account Creation Date");
         embed.setTimestamp(e.getUser().getTimeCreated());
         Main.getLogChannel().sendMessageEmbeds(embed.build()).queue();
-        Var.createNewVariableFile(e.getMember());
+        Var.addNewMemberAndUser(e.getMember());
     }
 
     @Override

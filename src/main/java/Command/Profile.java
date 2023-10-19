@@ -83,9 +83,9 @@ public class Profile {
         embed.setColor(member.getColorRaw());
 
         //Add various fields dependent on Users Preference
-        for (int field : Var.getProfileFields(member.getUser())) {
-            embed.addField(makeField(member,field));
-        }
+        //for (int field : Var.getProfileFields(member.getUser())) {
+        //    embed.addField(makeField(member,field));
+        //}
 
         //Return Embed.
         return embed.build();
@@ -115,11 +115,11 @@ public class Profile {
             case 2 -> {return new MessageEmbed.Field("Weeks in Noctori", String.valueOf(ChronoUnit.WEEKS.between(dateJoined, LocalDate.now())), true);}
             case 3 -> {return new MessageEmbed.Field("Months in Noctori", String.valueOf(ChronoUnit.MONTHS.between(dateJoined, LocalDate.now())), true);}
             case 4 -> {return new MessageEmbed.Field("Years in Noctori", String.valueOf(ChronoUnit.YEARS.between(dateJoined, LocalDate.now())), true);}
-            case 9 -> {return new MessageEmbed.Field("Dailies Claimed", String.valueOf(Var.getDailiesClaimed(member.getUser())), true);}
+            case 9 -> {return new MessageEmbed.Field("Dailies Claimed", String.valueOf(Var.getDailiesClaimed(member)), true);}
             case 10 -> {return new MessageEmbed.Field("Games Claimed", String.valueOf(Var.getGameKeys(member.getUser()).size()), true);}
-            case 11 -> {return new MessageEmbed.Field("Money", "$" + Var.getMoney(member.getUser()), true);}
-            case 200 -> {return new MessageEmbed.Field("Minecraft Username", String.valueOf(Var.getMinecraftUsername(member.getUser())), true);}
-            case 201 -> {return new MessageEmbed.Field("Genshin UID", String.valueOf(Var.getGenshinUid(member.getUser())), true);}
+            case 11 -> {return new MessageEmbed.Field("Money", "$" + Var.getMoney(member), true);}
+            case 200 -> {return new MessageEmbed.Field("Minecraft UUID", String.valueOf(Var.getMinecraftUUID(member.getUser())), true);}
+            case 201 -> {return new MessageEmbed.Field("Genshin UID", String.valueOf(Var.getGenshinUID(member.getUser())), true);}
             default -> {
                 if (dateBoosted != null) {
                     switch (field) {
@@ -188,7 +188,7 @@ public class Profile {
         System.out.println(numOfFields);
         System.out.println(profileFields.size());
         System.out.println(profileFields.subList(0,numOfFields));
-        Var.setProfileFields(e.getUser(), profileFields);
+        //Var.setProfileFields(e.getUser(), profileFields);
         e.replyEmbeds(getProfile(e.getMember())).queue();
     }
 
@@ -221,7 +221,7 @@ public class Profile {
                     default -> profileFields.add(0);
                 }
             }
-            Var.setProfileFields(message.getAuthor(), profileFields);
+            //Var.setProfileFields(message.getAuthor(), profileFields);
             Member member = message.getMember();
             if (member == null) {
                 message.reply("Profile Updated").queue();

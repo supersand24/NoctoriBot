@@ -20,12 +20,20 @@ public class Bank {
     private final static int PAY_SERVER_BOOSTER_PER_MONTH = 2;
 
     public static void daily(Member member) {
-        if ( LocalDate.now().compareTo(Var.getDailyClaimed(member.getUser())) > 0) {
+        log.debug("Local Date now " + LocalDate.now());
+        log.debug("Read from DB " + Var.getDailyClaimed(member));
+        if ( LocalDate.now().compareTo(Var.getDailyClaimed(member)) > 0) {
+            log.debug("true");
+        } else {
+            log.debug("false");
+        }
+
+        if ( LocalDate.now().compareTo(Var.getDailyClaimed(member)) > 0) {
             log.info(member.getEffectiveName() + " has logged in for the day.");
             anniversary(member);
             User user = member.getUser();
-            Var.updateDailyClaimed(user);
-            if (Var.getNotification(user)) {
+            Var.updateDailyClaimed(member);
+            if (Var.getPaymentNotification(user)) {
                 user.openPrivateChannel().queue(privateChannel -> {
                    privateChannel.sendMessageEmbeds( payDaily(member) ).queue();
                 });
@@ -66,20 +74,23 @@ public class Bank {
 
         embed.setDescription("You were paid $" + total + " for being active in Noctori on " + LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)) + ".");
 
-        Var.addMoney(member.getUser(),total);
+        Var.addMoney(member,total);
         return embed.build();
     }
 
     public static void payMember(int amount, Member from, Member to) {
-        if (Var.getMoney(from.getUser()) >= amount) {
-            Var.removeMoney(from.getUser(), amount);
-            Var.addMoney(to.getUser(), amount);
+        int fromAccount =  Var.getMoney(from);
+        int toAccount = Var.getMoney(to);
+        if (fromAccount >= amount) {
+            fromAccount -= amount; toAccount += amount;
+            Var.setMoney(from, fromAccount);
+            Var.setMoney(to, toAccount);
             from.getUser().openPrivateChannel().queue(privateChannel ->
-                privateChannel.sendMessage("You received " + amount + " Noctori Bucks from " + from.getEffectiveName() +".\nYour new balance is " + Var.getMoney(to.getUser()) + " Noctori Bucks.")
+                privateChannel.sendMessage("You received " + amount + " Noctori Bucks from " + from.getEffectiveName() +".\nYour new balance is " + Var.getMoney(to) + " Noctori Bucks.")
             );
         } else {
             from.getUser().openPrivateChannel().queue(privateChannel ->
-                privateChannel.sendMessage("You tried to pay " + to.getEffectiveName() + " " + amount + " Noctori Bucks, but you do not have enough.\nYour account has " + Var.getMoney(from.getUser()) + " Noctori Bucks." ).queue()
+                privateChannel.sendMessage("You tried to pay " + to.getEffectiveName() + " " + amount + " Noctori Bucks, but you do not have enough.\nYour account has " + Var.getMoney(from) + " Noctori Bucks." ).queue()
             );
         }
     }

@@ -1,499 +1,637 @@
 package Bot;
 
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.StageChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
-import java.util.stream.Collectors;
 
 public class Var {
 
     private final static Logger log = LoggerFactory.getLogger(Var.class);
 
-    private final static int VAR_MONEY = 0;
-    private final static int VAR_DAILY_CLAIMED_DATE = 1;
-    private final static int VAR_DAILIES_CLAIMED = 2;
-    private final static int VAR_NOTIFICATION = 3;
-    private final static int VAR_MEMBERS_INVITED = 4;
-    private final static int VAR_INVITED_BY_MEMBER = 5;
-    private final static int VAR_GAME_CLAIMED_DATE = 6;
-    private final static int VAR_GAME_KEYS = 7;
-    private final static int VAR_GENSHIN_UID = 8;
-    private final static int VAR_MINECRAFT_USERNAME = 9;
-    private final static int VAR_PROFILE_FIELDS = 10;
+    static String ip;
+    static String username;
+    static String password;
 
-    public static int getMoney(User user) {
+    public static void verifyCredentials() {
         try {
-            int money = Integer.parseInt(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_MONEY));
-            log.debug("Read " + user.getName() + " has " + money + " Noctori Bucks.");
-            return money;
+            List<String> dbCredentials = Files.readAllLines(Paths.get("db.credentials"));
+            if (dbCredentials.size() != 3) { log.error("db.credentials is not formatted properly."); System.exit(2); }
+            ip = dbCredentials.get(0);
+            username = dbCredentials.get(1);
+            password = dbCredentials.get(2);
+            log.info("Database Credentials Imported");
         } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    public static void setMoney(User user, int money) {
-        try {
-            Path filePath = Paths.get("variables/" + user.getId() + ".var");
-            List<String> content = Files.readAllLines(filePath);
-            content.set(VAR_MONEY, String.valueOf(money));
-            log.debug("Set " + user.getName() + " Noctori Bucks to " + money + ".");
-            Files.write(filePath, content, StandardCharsets.UTF_8);
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Could not find the db.credentials file!");
+            System.exit(3);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
-    public static void addMoney(User user, int money) {
+    private static Connection openConnection() {
         try {
-            Path filePath = Paths.get("variables/" + user.getId() + ".var");
-            List<String> content = Files.readAllLines(filePath);
-            content.set(VAR_MONEY, String.valueOf(Integer.parseInt(content.get(VAR_MONEY)) + money));
-            log.debug("Gave " + money + " Noctori Bucks to " + user.getName() + ", new balance is " + content.get(VAR_MONEY) + ".");
-            Files.write(filePath, content, StandardCharsets.UTF_8);
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            log.trace("Database Connection Opened");
+            return DriverManager.getConnection("jdbc:mysql://" + ip + "/noctori_bot", username, password);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.exit(4);
+        }
+        return null;
+    }
+
+    //Guild Related
+
+    private static ResultSet getResultsForGuild(Connection connection, Guild guild) {
+        if (guild == null) { log.error("Guild was null."); return null; }
+        try {
+            ResultSet results = connection.createStatement().executeQuery("select * from guild where id = " + guild.getId());
+            results.next();
+            return results;
+        } catch (SQLException ex) {
+            log.error("Could not find " + guild.getName() + " guild on database.");
+        }
+        return null;
+    }
+
+    private static PreparedStatement getStatementForGuild(Connection connection, Guild guild, String update) {
+        if (guild == null) { log.error("Guild was null."); return null; }
+        try {
+            PreparedStatement statement = connection.prepareStatement(
+                    "UPDATE `noctori_bot`.`guild` SET " + update + " = ? WHERE `id` = ?"
+            );
+            statement.setString(2, guild.getId());
+            return statement;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    public static boolean hasEconomy(Guild guild) {
+        Connection connection = openConnection();
+        try {
+            ResultSet results = getResultsForGuild(connection, guild);
+            boolean economy = results.getBoolean("hasEconomy");
+            if (economy)
+                log.debug("Read " + guild.getName() + " has Economy enabled.");
+            else
+                log.debug("Read " + guild.getName() + " has Economy disabled.");
+            return economy;
+        } catch (NullPointerException | SQLException ex) {
+            log.error("hasEconomy could not be retrieved.");
+            return false;
+        } finally {
+            try { connection.close();}
+            catch (SQLException e) { e.printStackTrace(); }
         }
     }
 
-    public static void removeMoney(User user, int money) {
+    public static void setEconomy(Guild guild, boolean economy) {
         try {
-            Path filePath = Paths.get("variables/" + user.getId() + ".var");
-            List<String> content = Files.readAllLines(filePath);
-            int wallet = Integer.parseInt(content.get(VAR_MONEY));
-            if (wallet > money) {
-                content.set(VAR_MONEY, String.valueOf(wallet - money));
+            Connection connection = openConnection();
+            PreparedStatement preparedStatement = getStatementForGuild(connection, guild, "hasEconomy");
+            if (economy) {
+                preparedStatement.setInt(1, 1);
+                log.debug("Enabled Economy for " + guild.getName() + ".");
             }
-            log.debug("Took " + money + " Noctori Bucks from " + user.getName() + ", new balance is " + content.get(VAR_MONEY) + ".");
-            Files.write(filePath, content, StandardCharsets.UTF_8);
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            else {
+                preparedStatement.setInt(1, 0);
+                log.debug("Disabled Economy for " + guild.getName() + ".");
+            }
+            preparedStatement.executeUpdate();
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
     }
 
-    public static LocalDate getDailyClaimed(User user) {
+    public static long getAutoVoiceNewChannelId(Guild guild) {
+        Connection connection = openConnection();
         try {
-            LocalDate dailyClaimed = LocalDate.parse(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_DAILY_CLAIMED_DATE));
-            log.debug("Read " + user.getName() + " was last active on " + dailyClaimed + ".");
-            return dailyClaimed;
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return LocalDate.now();
-    }
-
-    public static int getDailiesClaimed(User user) {
-        try {
-            int dailiesClaimed = Integer.parseInt(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_DAILIES_CLAIMED));
-            log.debug("Read " + user.getName() + " has claimed " + dailiesClaimed + " dailies.");
-            return dailiesClaimed;
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            ResultSet results = getResultsForGuild(connection, guild);
+            long autoVoiceNewChannelId = results.getLong("autoVoiceNewChannel");
+            log.debug("Read " + guild.getName() + " Auto Voice New Channel ID is " + autoVoiceNewChannelId + ".");
+            return autoVoiceNewChannelId;
+        } catch (NullPointerException | SQLException ex) {
+            log.error("getAutoVoiceNewChannelId could not be retrieved.");
+        } finally {
+            try { connection.close();}
+            catch (SQLException e) { e.printStackTrace(); }
         }
         return 0;
     }
 
-    public static boolean getNotification(User user) {
-        try {
-            return Boolean.parseBoolean(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_NOTIFICATION));
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
+    public static StageChannel getAutoVoiceNewChannel(Guild guild) {
+        return guild.getStageChannelById(getAutoVoiceNewChannelId(guild));
     }
 
-    public static void setNotification(User user, boolean bool) {
+    public static void setAutoVoiceNewChannelId(Guild guild, long autoVoiceNewChannelId) {
         try {
-            Path filePath = Paths.get("variables/" + user.getId() + ".var");
-            List<String> content = Files.readAllLines(filePath);
-            content.set(VAR_NOTIFICATION, String.valueOf(bool));
-            log.debug("Set " + user.getName() + " Notification Setting " + bool + ".");
-            Files.write(filePath, content, StandardCharsets.UTF_8);
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (guild == null) { log.error("Guild was null."); return; }
+            Connection connection = openConnection();
+
+            PreparedStatement preparedStatement = getStatementForGuild(connection, guild, "autoVoiceNewChannel");
+            preparedStatement.setLong(1, autoVoiceNewChannelId);
+            preparedStatement.executeUpdate();
+            log.debug("Auto Voice New Channel ID for " + guild.getName() + " was set to " + autoVoiceNewChannelId);
+
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
     }
 
-    public static boolean toggleNotification(User user) {
+    public static void setAutoVoiceNewChannelId(Guild guild, StageChannel autoVoiceNewChannel) {
         try {
-            Path filePath = Paths.get("variables/" + user.getId() + ".var");
-            List<String> content = Files.readAllLines(filePath);
-            boolean notification = Boolean.parseBoolean(content.get(VAR_NOTIFICATION));
-            content.set(VAR_NOTIFICATION, String.valueOf(!notification));
-            log.debug("Set " + user.getName() + " toggled Notification Setting to " + !notification + ".");
-            Files.write(filePath, content, StandardCharsets.UTF_8);
+            if (guild == null) { log.error("Guild was null."); return; }
+            Connection connection = openConnection();
+
+            PreparedStatement preparedStatement = getStatementForGuild(connection, guild, "autoVoiceNewChannel");
+            preparedStatement.setLong(1, autoVoiceNewChannel.getIdLong());
+            preparedStatement.executeUpdate();
+            log.debug("Auto Voice New Channel ID for " + guild.getName() + " was set to " + autoVoiceNewChannel.getIdLong());
+
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    //User Related
+
+    private static ResultSet getResultsForUser(Connection connection, User user) {
+        if (user == null) { log.error("User was null."); return null; }
+        try {
+            ResultSet results = connection.createStatement().executeQuery("select * from user where id = " + user.getId());
+            results.next();
+            return results;
+        } catch (SQLException ex) {
+            log.error("Could not find user " + user.getName() + " on database.");
+        }
+        return null;
+    }
+
+    private static PreparedStatement getStatementForUser(Connection connection, User user, String update) {
+        if (user == null) { log.error("User was null."); return null; }
+        try {
+            PreparedStatement statement = connection.prepareStatement(
+                    "UPDATE `noctori_bot`.`user` SET " + update + " = ? WHERE `id` = ?"
+            );
+            statement.setString(2, user.getId());
+            return statement;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    public static boolean getPaymentNotification(User user) {
+        Connection connection = openConnection();
+        try {
+            ResultSet results = getResultsForUser(connection, user);
+            boolean notification = results.getBoolean("paymentNotification");
+            if (notification)
+                log.debug("Read " + user.getName() + " has Payment Notifications enabled.");
+            else
+                log.debug("Read " + user.getName() + " has Payment Notifications disabled.");
             return notification;
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public static void updateDailyClaimed(User user) {
-        try {
-            Path filePath = Paths.get("variables/" + user.getId() + ".var");
-            List<String> content = Files.readAllLines(filePath);
-            LocalDate now = LocalDate.now();
-            int dailiesClaimed = Integer.parseInt(content.get(VAR_DAILIES_CLAIMED)) + 1;
-            content.set(VAR_DAILY_CLAIMED_DATE, now.toString());
-            content.set(VAR_DAILIES_CLAIMED, String.valueOf(dailiesClaimed));
-            log.debug("Set " + user.getName() + " daily claimed to " + now + ".");
-            log.debug("Set " + user.getName() + " has claimed " + dailiesClaimed + " dailies.");
-            Files.write(filePath, content, StandardCharsets.UTF_8);
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (NullPointerException | SQLException ex) {
+            log.error("paymentNotification could not be retrieved.");
+            return false;
+        } finally {
+            try { connection.close();}
+            catch (SQLException e) { e.printStackTrace(); }
         }
     }
 
-    public static List<String> getMembersInvited(User user) {
+    public static void setPaymentNotification(User user, boolean notification) {
         try {
-            List<String> membersInvited = parseStringArray(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_MEMBERS_INVITED));
-            log.debug("Read " + user.getName() + " invited " + membersInvited + " to the server.");
-            return membersInvited;
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static void addMemberInvited(User user, Member member) {
-        try {
-            Path filePath = Paths.get("variables/" + user.getId() + ".var");
-            List<String> content = Files.readAllLines(filePath);
-            List<String> members = parseStringArray(content.get(VAR_MEMBERS_INVITED));
-            members.add(member.getId());
-            content.set(4, members.toString() );
-            log.debug(user.getName() + " invited " + member.getEffectiveName() + " to the Server.");
-            Files.write(filePath, content, StandardCharsets.UTF_8);
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static String getInvitedByMember(User user) {
-        try {
-            String invitedByMember = Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_INVITED_BY_MEMBER);
-            if (invitedByMember.equals("0")) {
-                log.debug("Read " + user.getName() + " was invited by no one.");
-            } else {
-                log.debug("Read " + user.getName() + " was invited by " + invitedByMember);
+            Connection connection = openConnection();
+            PreparedStatement preparedStatement = getStatementForUser(connection, user, "hasEconomy");
+            if (notification) {
+                preparedStatement.setInt(1, 1);
+                log.debug("Enabled Payment Notifications for " + user.getName() + ".");
             }
-            return invitedByMember;
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            else {
+                preparedStatement.setInt(1, 0);
+                log.debug("Disabled Payment Notifications for " + user.getName() + ".");
+            }
+            preparedStatement.executeUpdate();
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static LocalDate getGameClaimedDate(User user) {
+        Connection connection = openConnection();
+        try {
+            ResultSet results = getResultsForUser(connection, user);
+            LocalDate date = results.getDate("gameClaimedDate").toLocalDate();
+            log.debug("Read " + user.getName() + " Last Game Claimed on " + date.toString() + ".");
+            return date;
+        } catch (Exception ex) {
+            log.error("getGameClaimedDate could not be retrieved.");
+        } finally {
+            try { connection.close();}
+            catch (SQLException e) { e.printStackTrace(); }
         }
         return null;
     }
 
-    public static void setInvitedByMember(User user, Member member) {
+    public static void setGameClaimedDate(User user, LocalDate gameClaimedDate) {
         try {
-            Path filePath = Paths.get("variables/" + user.getId() + ".var");
-            List<String> content = Files.readAllLines(filePath);
-            content.set(VAR_INVITED_BY_MEMBER, member.getId());
-            log.debug("Set " + user.getName() + " was invited by " + member.getEffectiveName() + ".");
-            Files.write(filePath, content, StandardCharsets.UTF_8);
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+            if (user == null) { log.error("User was null."); return; }
+            Connection connection = openConnection();
 
-    public static LocalDate getGameClaimed(User user) {
-        try {
-            LocalDate gameClaimedDate = LocalDate.parse(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_GAME_CLAIMED_DATE));
-            log.debug("Read " + user.getName() + " last claimed a game on " + gameClaimedDate + ".");
-            return gameClaimedDate;
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            PreparedStatement preparedStatement = getStatementForUser(connection, user, "autoVoiceNewChannel");
+            preparedStatement.setDate(1, Date.valueOf(gameClaimedDate));
+            preparedStatement.executeUpdate();
+            log.debug("Last Game Claimed Date for " + user.getName() + " was set to " + gameClaimedDate + ".");
+
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
-        return LocalDate.now();
     }
 
     public static List<String> getGameKeys(User user) {
+        Connection connection = openConnection();
         try {
-            List<String> gameKeys = parseStringArray(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_GAME_KEYS));
-            log.debug("Read " + user.getName() + " owns these game keys " + gameKeys);
-            return gameKeys;
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            //TODO Make a Game Key it's own object.
+            List<String> keys = new ArrayList<>();
+            ResultSet userResults = getResultsForUser(connection, user);
+            ResultSet gameKeyResults = getResultsForGameKeys(connection, user);
+            keys.add(gameKeyResults.getString(userResults.getString("gameKeys")));
+            log.debug("Read " + user.getName() + " Claimed " + keys.get(0) + ".");
+            return keys;
+        } catch (Exception ex) {
+            log.error("gameKeys could not be retrieved.");
+        } finally {
+            try { connection.close();}
+            catch (SQLException e) { e.printStackTrace(); }
         }
-        return new ArrayList<>();
+        return null;
     }
 
-    public static void addGameKey(User user, String game) {
+    public static long getGenshinUID(User user) {
+        Connection connection = openConnection();
         try {
-            Path filePath = Paths.get("variables/" + user.getId() + ".var");
-            List<String> content = Files.readAllLines(filePath);
-            List<String> gameKeys = parseStringArray(content.get(VAR_GAME_KEYS));
-            gameKeys.add(game);
-            LocalDate now = LocalDate.now();
-            content.set(VAR_GAME_CLAIMED_DATE, now.toString() );
-            content.set(VAR_GAME_KEYS, gameKeys.toString() );
-            log.debug("Set " + user.getName() + " last claimed game date to " + now + ".");
-            log.debug("Added " + game + " to " + user.getName() + "'s game collection.");
-            Files.write(filePath, content, StandardCharsets.UTF_8);
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static long getGenshinUid(User user) {
-        try {
-            long uid = Long.parseLong(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_GENSHIN_UID));
-            log.debug("Read " + user.getName() + " Genshin UID " + uid);
-            return uid;
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            ResultSet results = getResultsForUser(connection, user);
+            long genshinUID = results.getLong("genshinUID");
+            log.debug("Read " + user.getName() + " Genshin UID is " + genshinUID + ".");
+            return results.getLong("genshinUID");
+        } catch (Exception ex) {
+            log.error("getGenshinUID could not be retrieved.");
+        } finally {
+            try { connection.close(); }
+            catch (SQLException e) { e.printStackTrace(); }
         }
         return 0;
     }
 
-    public static void setGenshinUid(User user, long uid) {
+    public static void setGenshinUID(User user, long genshinUID) {
         try {
-            Path filePath = Paths.get("variables/" + user.getId() + ".var");
-            List<String> content = Files.readAllLines(filePath);
-            content.set(VAR_GENSHIN_UID, String.valueOf(uid));
-            log.debug("Set " + user.getName() + " Genshin UID to " + uid + ".");
-            Files.write(filePath, content, StandardCharsets.UTF_8);
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (user == null) { log.error("User was null."); return; }
+            Connection connection = openConnection();
+
+            PreparedStatement preparedStatement = getStatementForUser(connection, user, "genshinUID");
+            preparedStatement.setLong(1, genshinUID);
+            preparedStatement.executeUpdate();
+            log.debug("Genshin UID for " + user.getName() + " was set to " + genshinUID + ".");
+
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
     }
 
-    public static String getMinecraftUsername(User user) {
+    public static String getMinecraftUUID(User user) {
+        Connection connection = openConnection();
         try {
-            String username = Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_MINECRAFT_USERNAME);
-            log.debug("Read " + user.getName() + " Minecraft Username is " + username);
-            return username;
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            ResultSet results = getResultsForUser(connection, user);
+            String minecraftUUID = results.getString("minecraftUUID");
+            log.debug("Read " + user.getName() + " Minecraft UUID is " + minecraftUUID + ".");
+            return minecraftUUID;
+        } catch (Exception ex) {
+            log.error("getMinecraftUUID could not be retrieved.");
+        } finally {
+            try { connection.close();}
+            catch (SQLException e) { e.printStackTrace(); }
         }
         return "";
     }
 
-    public static void setMinecraftUsername(User user, String username) {
+    public static void setMinecraftUUID(User user, String minecraftUUID) {
         try {
-            Path filePath = Paths.get("variables/" + user.getId() + ".var");
-            List<String> content = Files.readAllLines(filePath);
-            content.set(VAR_MINECRAFT_USERNAME, username);
-            log.debug("Set " + user.getName() + " Minecraft Username to " + username + ".");
-            Files.write(filePath, content, StandardCharsets.UTF_8);
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            if (user == null) { log.error("User was null."); return; }
+            Connection connection = openConnection();
+
+            PreparedStatement preparedStatement = getStatementForUser(connection, user, "minecraftUUID");
+            preparedStatement.setString(1, minecraftUUID);
+            preparedStatement.executeUpdate();
+            log.debug("Minecraft UUID for " + user.getName() + " was set to " + minecraftUUID + ".");
+
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
     }
 
-    public static List<Integer> getProfileFields(User user) {
+    //Member Related
+
+    private static ResultSet getResultsForMember(Connection connection, User user, Guild guild) {
+        if (user == null) { log.error("User was null."); return null; }
+        if (guild == null) { log.error("Guild was null."); return null; }
         try {
-            List<Integer> profileFields = parseIntegerArray(Files.readAllLines(Paths.get("variables/" + user.getId() + ".var")).get(VAR_PROFILE_FIELDS));
-            log.debug("Read " + user.getName() + " has this profile field set " + profileFields);
-            return profileFields;
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            ResultSet results = connection.createStatement().executeQuery("select * from member where user_id = " + user.getId() + " and guild_id = " + guild.getId() );
+            results.next();
+            return results;
+        } catch (SQLException ex) {
+            log.error("Could not find user " + user.getName() + " for " + guild.getName() + " guild on database.");
         }
-        return new ArrayList<>();
+        return null;
     }
 
-    public static void setProfileFields(User user, List<Integer> profileFields) {
+    private static ResultSet getResultsForMember(Connection connection, Member member) {
+        if (member == null) { log.error("Member was null."); return null; }
+        if (member.getUser().isBot()) { log.error("Member is a bot."); return null; }
+        return getResultsForMember(connection, member.getUser(),member.getGuild());
+    }
+
+    private static PreparedStatement getStatementForMember(Connection connection, Member member, String update) {
+        if (member == null) { log.error("Member was null."); return null; }
+        if (member.getUser().isBot()) { log.error("Member is a bot."); return null; }
         try {
-            Path filePath = Paths.get("variables/" + user.getId() + ".var");
-            List<String> content = Files.readAllLines(filePath);
-            content.set(VAR_PROFILE_FIELDS, profileFields.toString());
-            log.debug("Set " + user.getName() + " Profile Fields to " + profileFields + ".");
-            Files.write(filePath, content, StandardCharsets.UTF_8);
-        } catch (NoSuchFileException e) {
-            log.error(user.getId() + ".var file not found!");
-        } catch (IOException e) {
-            e.printStackTrace();
+            PreparedStatement statement = connection.prepareStatement(
+                    "UPDATE `noctori_bot`.`member` SET " + update + " = ? WHERE `user_id` = ? AND `guild_id` = ?"
+            );
+            statement.setString(2, member.getId());
+            statement.setString(3, member.getGuild().getId());
+            return statement;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
+        return null;
     }
 
-    private static List<String> parseStringArray(String array) {
-        String[] strings;
-        if (array.substring(1, array.length() - 1).isEmpty()) {
-            strings = new String[0];
-        } else {
-            strings = array.substring(1, array.length() - 1).split(", ");
-        }
-        return new ArrayList<>(Arrays.asList(strings));
-    }
-
-    private static List<Integer> parseIntegerArray(String array) {
-        return parseStringArray(array).stream().map(Integer::parseInt).collect(Collectors.toList());
-    }
-
-    private static void insertVariableForAll(int insertIndex, String defaultVar, boolean save) {
-        for ( Member member : Main.getNoctori().getMembers() ) {
-            try {
-                Path filePath = Paths.get("variables/" + member.getId() + ".var");
-                List<String> content = Files.readAllLines(filePath);
-                content.add(insertIndex,defaultVar);
-                if (save) {
-                    Files.write(filePath, content, StandardCharsets.UTF_8);
-                } else {
-                    System.out.println(member.getId() + " => " + content);
-                }
-            } catch (NoSuchFileException e) {
-                log.error(member.getId() + ".var file not found!");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private static void deleteVariableForAll(int insertIndex, boolean save) {
-        for ( Member member : Main.getNoctori().getMembers() ) {
-            try {
-                Path filePath = Paths.get("variables/" + member.getId() + ".var");
-                List<String> content = Files.readAllLines(filePath);
-                content.remove(insertIndex);
-                if (save) {
-                    Files.write(filePath, content, StandardCharsets.UTF_8);
-                } else {
-                    System.out.println(content);
-                }
-            } catch (NoSuchFileException e) {
-                log.error(member.getId() + ".var file not found!");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public static void createNewVariable(int insertIndex, String defaultVar) {
-        insertVariableForAll(insertIndex, defaultVar, false);
-        System.out.println("Format Okay? 1 = Yes");
-        Scanner in = new Scanner(System.in);
-        if (in.nextInt() == 1) {
-            insertVariableForAll(insertIndex, defaultVar, true);
-            log.info("Changes were saved.");
-        } else {
-            log.info("Changes were not saved.");
-        }
-        in.close();
-    }
-
-    public static void createNewVariable(int insertIndex, int defaultVar) {
-        createNewVariable(insertIndex,String.valueOf(defaultVar));
-    }
-
-    public static void createNewVariable(int insertIndex, long defaultVar) {
-        createNewVariable(insertIndex,String.valueOf(defaultVar));
-    }
-
-    public static void createNewVariable(int insertIndex, double defaultVar) {
-        createNewVariable(insertIndex,String.valueOf(defaultVar));
-    }
-
-    public static void createNewVariable(int insertIndex, boolean defaultVar) {
-        createNewVariable(insertIndex,String.valueOf(defaultVar));
-    }
-
-    public static void deleteVariable(int deleteIndex) {
-        deleteVariableForAll(deleteIndex, false);
-        System.out.println("Format Okay? 1 = Yes");
-        Scanner in = new Scanner(System.in);
-        if (in.nextInt() == 1) {
-            deleteVariableForAll(deleteIndex, true);
-            log.info("Changes were saved.");
-        } else {
-            log.info("Changes were not saved.");
-        }
-        in.close();
-    }
-
-    public static void createNewVariableFile(Member member) {
+    public static int getMoney(Member member) {
+        Connection connection = openConnection();
         try {
-            List<String> content = new ArrayList<>();
-            content.add("0");
-            content.add(LocalDate.now().toString());
-            content.add("1");
-            content.add("false");
-            content.add("[]");
-            content.add("0");
-            content.add(LocalDate.now().toString());
-            content.add("[]");
-            content.add("0");
-            content.add("0");
-            content.add("[0]");
-            log.debug("Created a new variable file for" + member.getEffectiveName() + " as " + member.getId() + ".var");
-            Files.write(Paths.get("variables/" + member.getId() + ".var"), content, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            e.printStackTrace();
+            ResultSet results = getResultsForMember(connection, member);
+            int money = results.getInt("money");
+            log.debug("Read " + member.getEffectiveName() + " Money is " + money + " in " + member.getGuild().getName() + ".");
+            return money;
+        } catch (SQLException ex) {
+            log.error("getMoney could not be retrieved.");
+        }
+        finally {
+            try { connection.close();}
+            catch (SQLException e) { e.printStackTrace(); }
+        }
+        return 0;
+    }
+
+    public static void setMoney(Member member, int money) {
+        try {
+            if (member == null) { log.error("Member was null."); return; }
+            Connection connection = openConnection();
+
+            PreparedStatement preparedStatement = getStatementForMember(connection, member, "money");
+            preparedStatement.setInt(1, money);
+            preparedStatement.executeUpdate();
+            log.debug("Money for " + member.getEffectiveName() + " of " + member.getGuild().getName() + " was set to " + money + ".");
+
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
     }
 
-    public static String print(User user) {
-        return user.getName() + " | " + user.getId() + "\n" +
-                "Money: " + getMoney(user) + "\n" +
-                "Daily Date: " + getDailyClaimed(user) + "\n" +
-                "Dailies Claimed: " + getDailiesClaimed(user) + "\n" +
-                "Notification: " + getNotification(user) + "\n" +
-                "Members Invited: " + getMembersInvited(user) + "\n" +
-                "Invited by: " + getInvitedByMember(user) + "\n" +
-                "Game Claimed Date: " + getGameClaimed(user) + "\n" +
-                "Game Keys: " + getGameClaimed(user) + "\n" +
-                "Genshin UID: " + getGenshinUid(user) + "\n" +
-                "Minecraft Username: " + getMinecraftUsername(user) + "\n" +
-                "Profile Fields: " + getProfileFields(user) + "\n" +
-                "-------------------------------";
+    public static void addMoney(Member member, int money) {
+        try {
+            if (member == null) { log.error("Member was null."); return; }
+            Connection connection = openConnection();
+
+            PreparedStatement preparedStatement = getStatementForMember(connection, member, "money");
+            preparedStatement.setInt(1, money + getMoney(member));
+            preparedStatement.executeUpdate();
+            log.debug("Money for " + member.getEffectiveName() + " of " + member.getGuild().getName() + " was increased by " + money + ".");
+
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
     }
 
+    public static void removeMoney(Member member, int money) {
+        try {
+            if (member == null) { log.error("Member was null."); return; }
+            Connection connection = openConnection();
+
+            PreparedStatement preparedStatement = getStatementForMember(connection, member, "money");
+            preparedStatement.setInt(1, money - getMoney(member));
+            preparedStatement.executeUpdate();
+            log.debug("Money for " + member.getEffectiveName() + " of " + member.getGuild().getName() + " was decreased by " + money + ".");
+
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static LocalDate getDailyClaimed(Member member) {
+        Connection connection = openConnection();
+        try {
+            ResultSet results = getResultsForMember(connection, member);
+            LocalDate date = results.getDate("dailyClaimed").toLocalDate();
+            log.debug("Read " + member.getEffectiveName() + " Last Daily Logged on " + date + " in " + member.getGuild().getName() + ".");
+            return date;
+        } catch (Exception ex) {
+            log.error("getDailyClaimed could not be retrieved.");
+        } finally {
+            try { connection.close();}
+            catch (SQLException e) { e.printStackTrace(); }
+        }
+        return null;
+    }
+
+    public static void setDailyClaimed(Member member, LocalDate dailyClaimed) {
+        try {
+            if (member == null) { log.error("Member was null."); return; }
+            Connection connection = openConnection();
+
+            PreparedStatement preparedStatement = getStatementForMember(connection, member, "dailyClaimed");
+            preparedStatement.setDate(1, Date.valueOf(dailyClaimed));
+            preparedStatement.executeUpdate();
+            log.debug("Daily Claimed for " + member.getEffectiveName() + " of " + member.getGuild().getName() + " was set to " + dailyClaimed + ".");
+
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static void updateDailyClaimed(Member member) {
+        try {
+            if (member == null) { log.error("Member was null."); return; }
+            Connection connection = openConnection();
+
+            PreparedStatement preparedStatement = getStatementForMember(connection, member, "dailyClaimed");
+            log.debug("Setting date to " + Date.valueOf(LocalDate.now()));
+            preparedStatement.setDate(1, Date.valueOf(LocalDate.now()));
+            preparedStatement.executeUpdate();
+            log.debug("Daily Claimed for " + member.getEffectiveName() + " of " + member.getGuild().getName() + " was set to " + LocalDate.now() + ".");
+
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static int getDailiesClaimed(Member member) {
+        Connection connection = openConnection();
+        try {
+            ResultSet results = getResultsForMember(connection, member);
+            int dailiesClaimed = results.getInt("dailiesClaimed");
+            log.debug("Read " + member.getEffectiveName() + " Dailies Claimed is " + dailiesClaimed + " in " + member.getGuild().getName() + ".");
+            return dailiesClaimed;
+        } catch (Exception ex) {
+            log.error("dailiesClaimed could not be retrieved.");
+        } finally {
+            try { connection.close();}
+            catch (SQLException e) { e.printStackTrace(); }
+        }
+        return 0;
+    }
+
+    public static void setDailiesClaimed(Member member, int dailiesClaimed) {
+        try {
+            if (member == null) { log.error("Member was null."); return; }
+            Connection connection = openConnection();
+
+            PreparedStatement preparedStatement = getStatementForMember(connection, member, "dailiesClaimed");
+            preparedStatement.setInt(1, dailiesClaimed);
+            preparedStatement.executeUpdate();
+            log.debug("Dailies Claimed for " + member.getEffectiveName() + " of " + member.getGuild().getName() + " was set to " + dailiesClaimed + ".");
+
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static Member getInvitedBy(Member member) {
+        Connection connection = openConnection();
+        try {
+            ResultSet results = getResultsForMember(connection, member);
+            Member invitedBy = member.getGuild().getMemberById(results.getLong("invitedByMember"));
+            log.debug("Read " + member.getEffectiveName() + " was Invited By " + invitedBy.getEffectiveName() + ".");
+            return invitedBy;
+        } catch (SQLException ex) {
+            log.error("invitedBy for " + member.getEffectiveName() + " could not be retrieved");
+        } catch (NullPointerException ex) {
+            log.error(member.getEffectiveName() + " was not invited by anyone.");
+        } finally {
+            try { connection.close();}
+            catch (SQLException e) { e.printStackTrace(); }
+        }
+        return null;
+    }
+
+    public static void setInvitedBy(Member member, Member invitedBy) {
+        try {
+            if (member == null ) { log.error("Member was null."); return; }
+            if (invitedBy == null) { log.error("Member Invited By was null."); return; }
+            Connection connection = openConnection();
+
+            PreparedStatement preparedStatement = getStatementForMember(connection, member, "invitedByMember");
+            preparedStatement.setLong(1, invitedBy.getIdLong());
+            preparedStatement.executeUpdate();
+            log.debug("Set " + member.getEffectiveName() + " was invited by " + invitedBy.getEffectiveName() + " to " + invitedBy.getGuild().getName() + ".");
+
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    //Game Key Related
+
+    private static ResultSet getResultsForGameKeys(Connection connection, Guild guild) {
+        if (guild == null) { log.error("Guild was null."); return null; }
+        try {
+            ResultSet results = connection.createStatement().executeQuery("select * from game_keys where guild_id = " + guild.getId() );
+            results.next();
+            return results;
+        } catch (SQLException ex) {
+            log.error("Could not find any game keys for " + guild.getName() + " guild on database.");
+        }
+        return null;
+    }
+
+    private static ResultSet getResultsForGameKeys(Connection connection, User user) {
+        if (user == null) { log.error("User was null."); return null; }
+        try {
+            ResultSet results = connection.createStatement().executeQuery("select * from game_keys where claimedBy = " + user.getId() );
+            results.next();
+            return results;
+        } catch (SQLException ex) {
+            log.error("Could not find any game keys for user " + user.getName() + " on database.");
+        }
+        return null;
+    }
+
+    private static ResultSet getResultsForGameKeys(Connection connection, User user, Guild guild) {
+        if (user == null) { log.error("User was null."); return null; }
+        if (guild == null) { log.error("Guild was null."); return null; }
+        try {
+            ResultSet results = connection.createStatement().executeQuery("select * from game_keys where claimedBy = " + user.getId() + " and guild_id = " + guild.getId() );
+            results.next();
+            return results;
+        } catch (SQLException ex) {
+            log.error("Could not find any game keys for user " + user.getName() + " in " + guild.getName() + " guild on database.");
+        }
+        return null;
+    }
+
+    //TODO Add methods to get games claimed
+
+    public static void addNewMemberAndUser(Member member) {
+        if (member == null) { log.error("Member was null."); return; }
+
+        Connection connection = openConnection();
+
+        try {
+            PreparedStatement statement = connection.prepareStatement(
+                    "INSERT INTO `noctori_bot`.`user` SET (`id`) VALUES ?"
+            );
+            statement.setLong(1,member.getUser().getIdLong());
+            statement.executeUpdate();
+
+            statement = connection.prepareStatement(
+                    "INSERT INTO `noctori_bot`.`member` (`user_id`, `guild_id`) VALUES (?, ?)"
+            );
+            statement.setLong(1, member.getIdLong());
+            statement.setLong(2, member.getGuild().getIdLong());
+            statement.executeUpdate();
+
+            statement.close();
+            connection.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
 
 }
