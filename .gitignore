@@ -24,6 +24,7 @@ hs_err_pid*
 
 db.credentials
 bot.token
+coc.api
 
 *.bak
 
@@ -31,7 +32,6 @@ bot.token
 .idea/*
 
 # Variables
-*.var
 leaderboards/*
 
 # Logger Files
