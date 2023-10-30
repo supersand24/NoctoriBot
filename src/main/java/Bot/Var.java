@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.StageChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,19 +154,63 @@ public class Var {
     }
 
     public static void setAutoVoiceNewChannelId(Guild guild, StageChannel autoVoiceNewChannel) {
+        setAutoVoiceNewChannelId(guild, autoVoiceNewChannel.getIdLong());
+    }
+
+    public static long getLogChannelId(Guild guild) {
+        Connection connection = openConnection();
+        try {
+            ResultSet results = getResultsForGuild(connection, guild);
+            long logChannelId = results.getLong("logChannel");
+            log.debug("Read " + guild.getName() + " Log Channel ID is " + logChannelId + ".");
+            return logChannelId;
+        } catch (NullPointerException | SQLException ex) {
+            log.error("logChannelId could not be retrieved.");
+        } finally {
+            try { connection.close();}
+            catch (SQLException e) { e.printStackTrace(); }
+        }
+        return 0;
+    }
+
+    public static TextChannel getLogChannel(Guild guild) {
+        return guild.getTextChannelById(getLogChannelId(guild));
+    }
+
+    public static void setLogChannelId(Guild guild, long logChannelId) {
         try {
             if (guild == null) { log.error("Guild was null."); return; }
             Connection connection = openConnection();
 
-            PreparedStatement preparedStatement = getStatementForGuild(connection, guild, "autoVoiceNewChannel");
-            preparedStatement.setLong(1, autoVoiceNewChannel.getIdLong());
+            PreparedStatement preparedStatement = getStatementForGuild(connection, guild, "logChannel");
+            preparedStatement.setLong(1, logChannelId);
             preparedStatement.executeUpdate();
-            log.debug("Auto Voice New Channel ID for " + guild.getName() + " was set to " + autoVoiceNewChannel.getIdLong());
+            log.debug("Log Channel ID for " + guild.getName() + " was set to " + logChannelId);
 
             connection.close();
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
+    }
+
+    public static void setAutoVoiceNewChannelId(Guild guild, TextChannel logChannel) {
+        setLogChannelId(guild, logChannel.getIdLong());
+    }
+
+    public static String getClashOfClansClanId(Guild guild) {
+        Connection connection = openConnection();
+        try {
+            ResultSet results = getResultsForGuild(connection, guild);
+            String clanId = results.getString("cocClanId");
+            log.debug("Read " + guild.getName() + " Clan ID is " + clanId + ".");
+            return clanId;
+        } catch (NullPointerException | SQLException ex) {
+            log.error("cocClanId could not be retrieved.");
+        } finally {
+            try { connection.close();}
+            catch (SQLException e) { e.printStackTrace(); }
+        }
+        return "0";
     }
 
     //User Related

@@ -1,6 +1,7 @@
 package Bot;
 
-import Game.BlackOps3.Manager;
+import Game.ClashOfClans.Clan;
+import Game.ClashOfClans.Manager;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
@@ -158,10 +159,10 @@ public class Listener extends ListenerAdapter {
                 switch (commandSplit[1]) {
                     case "bo3" -> {
                         switch (commandSplit[2]) {
-                            case "maps" -> e.reply(Manager.getSteamCollectionURL()).setEphemeral(true).queue();
+                            case "maps" -> e.reply(Game.BlackOps3.Manager.getSteamCollectionURL()).setEphemeral(true).queue();
                             case "leaderboard" -> {
                                 String search = e.getOption("map").getAsString();
-                                MessageEmbed leaderboard = Manager.getMapLeaderboard(search);
+                                MessageEmbed leaderboard = Game.BlackOps3.Manager.getMapLeaderboard(search);
                                 if (leaderboard == null) {
                                     e.reply("Could not find a map by that name.").setEphemeral(true).queue();
                                     log.error("Could not find a map by name: " + search);
@@ -172,6 +173,13 @@ public class Listener extends ListenerAdapter {
                         }
                     }
                 }
+            }
+            case "get-clan" -> {
+                Clan cocClan = Manager.getClan(e.getGuild());
+                if (cocClan != null)
+                    e.replyEmbeds(cocClan.toEmbed()).queue();
+                else
+                    e.reply("Could not get Clan Info!").queue();
             }
             case "dev" -> {
                 switch (commandSplit[1]) {
@@ -396,12 +404,12 @@ public class Listener extends ListenerAdapter {
     public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent e) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor(e.getUser().getName(), e.getUser().getEffectiveAvatarUrl(), e.getUser().getEffectiveAvatarUrl());
-        embed.setDescription(e.getUser().getName() + " joined Noctori.");
+        embed.setDescription(e.getUser().getName() + " joined" + e.getGuild().getName() + ".");
         embed.setImage(e.getUser().getAvatarUrl());
         embed.addField("Is Bot", String.valueOf(e.getUser().isBot()),true);
         embed.setFooter("Account Creation Date");
         embed.setTimestamp(e.getUser().getTimeCreated());
-        Main.getLogChannel().sendMessageEmbeds(embed.build()).queue();
+        Var.getLogChannel(e.getGuild()).sendMessageEmbeds(embed.build()).queue();
         Var.addNewMemberAndUser(e.getMember());
     }
 
@@ -409,9 +417,9 @@ public class Listener extends ListenerAdapter {
     public void onGuildMemberRemove(@NotNull GuildMemberRemoveEvent e) {
         EmbedBuilder embed = new EmbedBuilder();
         embed.setAuthor(e.getUser().getName(), e.getUser().getEffectiveAvatarUrl(), e.getUser().getEffectiveAvatarUrl());
-        embed.setDescription(e.getUser().getName() + " left Noctori.");
+        embed.setDescription(e.getUser().getName() + " left " + e.getGuild().getName() + ".");
         embed.setImage(e.getUser().getAvatarUrl());
         embed.addField("Bot", String.valueOf(e.getUser().isBot()),true);
-        Main.getLogChannel().sendMessageEmbeds(embed.build()).queue();
+        Var.getLogChannel(e.getGuild()).sendMessageEmbeds(embed.build()).queue();
     }
 }

@@ -1,9 +1,9 @@
 package Bot;
 
+import Game.ClashOfClans.Manager;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -53,6 +53,9 @@ public class Main {
 
             //Start Connection with Database
             Var.verifyCredentials();
+
+            //Import Clash of Clans API Key
+            Manager.importAPIKey();
 
             //Generic Slash Commands
             getNoctori().upsertCommand("money","Checks your Noctori Bank.").addSubcommands(
@@ -125,6 +128,12 @@ public class Main {
                     Commands.context(Command.Type.USER, "Make Channel Admin")
             ).queue();
 
+            jda.getGuildById(1166138066977693746l).upsertCommand("link-coc", "Link your Clash of Clans account").addOptions(
+                    new OptionData(OptionType.STRING, "uuid", "Your Clash of Clan UUID")
+            ).queue();
+
+            jda.getGuildById(1166138066977693746l).upsertCommand("get-clan", "Get Data on the Clash of Clans Clan").queue();
+
 
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -148,10 +157,6 @@ public class Main {
             noctori = jda.getGuilds().get(0);
         }
         return noctori;
-    }
-
-    public static TextChannel getLogChannel() {
-        return getNoctori().getTextChannelById(444524933415043073L);
     }
 
 }
