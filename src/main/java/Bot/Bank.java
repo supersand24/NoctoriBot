@@ -19,29 +19,7 @@ public class Bank {
     private final static int PAY_SERVER_BOOSTER = 70;
     private final static int PAY_SERVER_BOOSTER_PER_MONTH = 2;
 
-    public static void daily(Member member) {
-        log.debug("Local Date now " + LocalDate.now());
-        log.debug("Read from DB " + Var.getDailyClaimed(member));
-        if ( LocalDate.now().compareTo(Var.getDailyClaimed(member)) > 0) {
-            log.debug("true");
-        } else {
-            log.debug("false");
-        }
-
-        if ( LocalDate.now().compareTo(Var.getDailyClaimed(member)) > 0) {
-            log.info(member.getEffectiveName() + " has logged in for the day.");
-            anniversary(member);
-            User user = member.getUser();
-            Var.updateDailyClaimed(member);
-            if (Var.getPaymentNotification(user)) {
-                user.openPrivateChannel().queue(privateChannel -> {
-                   privateChannel.sendMessageEmbeds( payDaily(member) ).queue();
-                });
-            }
-        }
-    }
-
-    public static MessageEmbed payDaily(Member member) {
+    public static MessageEmbed generatePayStub(Member member) {
         int total = 0;
         long payTemp = 0;
         EmbedBuilder embed = new EmbedBuilder();
@@ -78,6 +56,7 @@ public class Bank {
         return embed.build();
     }
 
+    //TODO Add a Guild Variable for Currency Name
     public static void payMember(int amount, Member from, Member to) {
         int fromAccount =  Var.getMoney(from);
         int toAccount = Var.getMoney(to);
@@ -95,6 +74,8 @@ public class Bank {
         }
     }
 
+
+    //TODO Remove Anniversary
     public static void anniversary(Member member) {
         int yearsJoined = OffsetDateTime.now().getYear() - member.getTimeJoined().getYear();
         Role role = getYearRole(yearsJoined);
@@ -109,6 +90,7 @@ public class Bank {
         }
     }
 
+    //TODO Remove Anniversary
     private static Role getYearRole(int year) {
         StringBuilder string = new StringBuilder();
         string.append(year).append(" Year"); if (year != 1) string.append("s");

@@ -380,7 +380,7 @@ public class VoiceManager extends ListenerAdapter {
         AudioChannel channelJoined = e.getChannelJoined();
         AudioChannel channelLeft = e.getChannelLeft();
 
-        //Bank.daily(member);
+        Var.daily(member);
 
         //Get the channel joined.
         if (channelJoined != null) {

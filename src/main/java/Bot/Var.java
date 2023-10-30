@@ -634,4 +634,43 @@ public class Var {
         }
     }
 
+    //Economy Related
+
+    /**
+     * Checks the Database if the Guild has Economy Enabled and Checks if the Member has not logged in today.
+     * @param member The Member to check their last log in date.
+     * @return
+     */
+    public static boolean daily(Member member) {
+        if (member == null) { log.error("Member was null."); return false; }
+        Connection connection = openConnection();
+
+        try {
+            ResultSet guildResults = getResultsForGuild(connection, member.getGuild());
+            boolean economy = guildResults.getBoolean("hasEconomy");
+            if (economy) {
+                log.debug("Read " + member.getGuild().getName() + " has Economy enabled.");
+                ResultSet memberResults = getResultsForMember(connection, member);
+                LocalDate date = memberResults.getDate("dailyClaimed").toLocalDate();
+                log.debug("Read " + member.getEffectiveName() + " Last Daily Logged on " + date + " in " + member.getGuild().getName() + ".");
+                if (LocalDate.now().compareTo(date) > 0) {
+                    log.info(member.getEffectiveName() + " has logged in to " + member.getGuild().getName() + " today.");
+                    PreparedStatement preparedStatement = getStatementForMember(connection, member, "dailyClaimed");
+                    preparedStatement.setDate(1, Date.valueOf(LocalDate.now()));
+                    preparedStatement.executeUpdate();
+                    log.debug("Daily Claimed for " + member.getEffectiveName() + " of " + member.getGuild().getName() + " was set to " + LocalDate.now() + ".");
+                    return true;
+                }
+            } else log.debug(member.getGuild().getName() + " has Economy disabled.");
+        } catch (SQLException ex) {
+            log.error("getMoney could not be retrieved.");
+        }
+        finally {
+            try {
+                connection.close();
+            }
+            catch (SQLException e) { e.printStackTrace(); }
+        }
+        return false;
+    }
 }

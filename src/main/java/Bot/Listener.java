@@ -350,7 +350,7 @@ public class Listener extends ListenerAdapter {
     @Override
     public void onMessageReceived(@NotNull MessageReceivedEvent e) {
         if (!e.getAuthor().isBot()) {
-            //Bank.daily(e.getMember());
+            Var.daily(e.getMember());
             String content = e.getMessage().getContentStripped();
             if (e.getMessage().getType() == MessageType.INLINE_REPLY) {
                 if (content.startsWith("repost to")) {
