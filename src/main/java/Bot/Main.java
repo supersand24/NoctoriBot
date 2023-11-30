@@ -128,8 +128,8 @@ public class Main {
                     Commands.context(Command.Type.USER, "Make Channel Admin")
             ).queue();
 
-            jda.getGuildById(1166138066977693746l).upsertCommand("link-coc", "Link your Clash of Clans account").addOptions(
-                    new OptionData(OptionType.STRING, "uuid", "Your Clash of Clan UUID")
+            jda.getGuildById(1166138066977693746l).upsertCommand("get-player", "Get Player with by id.").addOptions(
+                    new OptionData(OptionType.STRING, "id", "The Clash of Clans ID").setRequired(true)
             ).queue();
 
             jda.getGuildById(1166138066977693746l).upsertCommand("get-clan", "Get Data on the Clash of Clans Clan").queue();

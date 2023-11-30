@@ -660,13 +660,13 @@ public class Var {
 
         try {
             PreparedStatement statement = connection.prepareStatement(
-                    "INSERT INTO `noctori_bot`.`user` SET (`id`) VALUES ?"
+                    "INSERT INTO `noctori_bot`.`user` SET ('id') VALUES ?"
             );
             statement.setLong(1,member.getUser().getIdLong());
             statement.executeUpdate();
 
             statement = connection.prepareStatement(
-                    "INSERT INTO `noctori_bot`.`member` (`user_id`, `guild_id`) VALUES (?, ?)"
+                    "INSERT INTO `noctori_bot`.`member` ('user_id', 'guild_id') VALUES (?, ?)"
             );
             statement.setLong(1, member.getIdLong());
             statement.setLong(2, member.getGuild().getIdLong());

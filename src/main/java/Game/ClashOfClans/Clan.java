@@ -220,7 +220,6 @@ public class Clan {
 
         embed.setTitle(getName());
         embed.setDescription(getDescription());
-        embed.setTimestamp(LocalDateTime.now());
         embed.setThumbnail(getBadgeUrls().get("medium"));
 
         embed.addField("Clan Level", String.valueOf(getClanLevel()), true);

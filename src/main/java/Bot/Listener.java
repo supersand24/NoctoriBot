@@ -2,6 +2,7 @@ package Bot;
 
 import Game.ClashOfClans.Clan;
 import Game.ClashOfClans.Manager;
+import Game.ClashOfClans.Player;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
@@ -180,6 +181,13 @@ public class Listener extends ListenerAdapter {
                     e.replyEmbeds(cocClan.toEmbed()).queue();
                 else
                     e.reply("Could not get Clan Info!").queue();
+            }
+            case "get-player" -> {
+                Player cocPlayer = Manager.getPlayer(e.getOption("id").getAsString());
+                if (cocPlayer != null)
+                    e.replyEmbeds(cocPlayer.toEmbed()).queue();
+                else
+                    e.reply("Could not get Player Info!").queue();
             }
             case "dev" -> {
                 switch (commandSplit[1]) {

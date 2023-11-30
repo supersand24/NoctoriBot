@@ -50,9 +50,38 @@ public class Manager {
 
             int statusCode = response.getStatusLine().getStatusCode();
             if (statusCode == 200) {
-                //System.out.println(EntityUtils.toString(response.getEntity()));
                 Gson gson = new Gson();
                 return gson.fromJson(EntityUtils.toString(response.getEntity()), Clan.class);
+            } else {
+                log.error("Status Code: " + statusCode);
+                Gson gson = new Gson();
+                ClientError error = gson.fromJson(EntityUtils.toString(response.getEntity()), ClientError.class);
+                log.error(error.toString());
+                return null;
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static Player getPlayer(String id) {
+        if (id.isEmpty()) { log.error("ID was empty."); return null; }
+
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            String url = "https://api.clashofclans.com/v1/players/%23" + id;
+
+            HttpGet get = new HttpGet(url);
+            get.addHeader("Authorization", "Bearer " + apiKey);
+
+            CloseableHttpResponse response = httpClient.execute(get);
+
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == 200) {
+                Gson gson = new Gson();
+                //System.out.println(EntityUtils.toString(response.getEntity()));
+                return gson.fromJson(EntityUtils.toString(response.getEntity()), Player.class);
             } else {
                 log.error("Status Code: " + statusCode);
                 Gson gson = new Gson();
